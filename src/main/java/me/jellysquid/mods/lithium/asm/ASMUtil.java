@@ -15,16 +15,21 @@ import java.util.function.Function;
 public class ASMUtil {
     public static final Logger LOGGER = LogManager.getLogger();
 
+    /**
+     * Matches all of the class fields to their references.
+     */
     public static Collection<FieldNode> matchFields(ClassNode classNode, Collection<FieldRef> refs) {
         return matchRefs(classNode.fields, refs,
                 (method) -> new FieldRef(classNode.name, method.name, method.desc));
     }
 
+    /**
+     * Matches all of the class methods to their references.
+     */
     public static Collection<MethodNode> matchMethods(ClassNode classNode, Collection<MethodRef> refs) {
         return matchRefs(classNode.methods, refs,
                 (method) -> new MethodRef(method.name, method.desc));
     }
-
 
     /**
      * Converts a dot-delimited intermediary name to a forward slash-delimited path notation.
@@ -33,6 +38,19 @@ public class ASMUtil {
         return intermediary.replace('.', '/');
     }
 
+    /**
+     * Matches a collection of nodes to their reference types. If not all of the references can be matched, the function
+     * throws an error.
+     *
+     * @param nodes The collection of nodes to search through
+     * @param refs The references to find in {@param nodes}
+     * @param nameFunction The name function responsible for creating comparable references ({@param <T>}) out of the
+     *                    node type ({@param <K>})
+     * @param <K> The node type
+     * @param <T> The reference type
+     * @return The collection of located nodes with undefined ordering
+     * @throws RuntimeException If not all the references could be mapped to nodes
+     */
     private static <K, T> Collection<K> matchRefs(Collection<K> nodes, Collection<T> refs, Function<K, T> nameFunction) {
         final HashSet<T> missing = new HashSet<>(refs);
         final List<K> matched = new ArrayList<>();
