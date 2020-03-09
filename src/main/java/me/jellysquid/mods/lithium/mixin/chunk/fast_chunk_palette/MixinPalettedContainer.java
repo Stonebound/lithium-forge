@@ -1,14 +1,14 @@
 package me.jellysquid.mods.lithium.mixin.chunk.fast_chunk_palette;
 
-import me.jellysquid.mods.lithium.common.world.chunk.palette.LithiumHashPalette;
-import me.jellysquid.mods.lithium.common.world.chunk.palette.LithiumPaletteResizeListener;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.util.IdList;
-import net.minecraft.util.PackedIntegerArray;
+import me.jellysquid.mods.lithium.common.world.chunk.palette.LithiumPaletteHashMap;
+import me.jellysquid.mods.lithium.common.world.chunk.palette.LithiumResizeCallback;
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.util.BitArray;
+import net.minecraft.util.ObjectIntIdentityMap;
 import net.minecraft.util.math.MathHelper;
-import net.minecraft.world.chunk.ArrayPalette;
-import net.minecraft.world.chunk.Palette;
-import net.minecraft.world.chunk.PalettedContainer;
+import net.minecraft.util.palette.IPalette;
+import net.minecraft.util.palette.PaletteArray;
+import net.minecraft.util.palette.PalettedContainer;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
@@ -17,15 +17,15 @@ import org.spongepowered.asm.mixin.Shadow;
 import java.util.function.Function;
 
 /**
- * Patches {@link PalettedContainer} to make use of {@link LithiumHashPalette}.
+ * Patches {@link PalettedContainer} to make use of {@link LithiumPaletteHashMap}.
  */
 @Mixin(value = PalettedContainer.class, priority = 999)
-public abstract class MixinPalettedContainer<T> implements LithiumPaletteResizeListener<T> {
+public abstract class MixinPalettedContainer<T> implements LithiumResizeCallback<T> {
     @Shadow
-    private Palette<T> palette;
+    private IPalette<T> palette;
 
     @Shadow
-    protected PackedIntegerArray data;
+    protected BitArray storage;
 
     @Shadow
     public abstract void unlock();
@@ -34,27 +34,27 @@ public abstract class MixinPalettedContainer<T> implements LithiumPaletteResizeL
     protected abstract void set(int int_1, T object_1);
 
     @Shadow
-    private int paletteSize;
+    private int bits;
 
     @Shadow
     @Final
-    private Function<CompoundTag, T> elementDeserializer;
+    private Function<CompoundNBT, T> deserializer;
 
     @Shadow
     @Final
-    private Function<T, CompoundTag> elementSerializer;
+    private Function<T, CompoundNBT> serializer;
 
     @Shadow
     @Final
-    private IdList<T> idList;
+    private ObjectIntIdentityMap<T> registry;
 
     @Shadow
     @Final
-    private Palette<T> fallbackPalette;
+    private IPalette<T> registryPalette;
 
     @Shadow
     @Final
-    private T field_12935;
+    private T defaultState;
 
     @Shadow
     protected abstract T get(int int_1);
@@ -70,14 +70,14 @@ public abstract class MixinPalettedContainer<T> implements LithiumPaletteResizeL
     public int onLithiumPaletteResized(int size, T obj) {
         this.lock();
 
-        if (size > this.paletteSize) {
-            PackedIntegerArray oldData = this.data;
-            Palette<T> oldPalette = this.palette;
+        if (size > this.bits) {
+            BitArray oldData = this.storage;
+            IPalette<T> oldPalette = this.palette;
 
-            this.setPaletteSize(size);
+            this.setBits(size);
 
-            for (int i = 0; i < oldData.getSize(); ++i) {
-                T oldObj = oldPalette.getByIndex(oldData.get(i));
+            for (int i = 0; i < oldData.size(); ++i) {
+                T oldObj = oldPalette.get(oldData.getAt(i));
 
                 if (oldObj != null) {
                     this.set(i, oldObj);
@@ -85,7 +85,7 @@ public abstract class MixinPalettedContainer<T> implements LithiumPaletteResizeL
             }
         }
 
-        int ret = this.palette.getIndex(obj);
+        int ret = this.palette.idFor(obj);
 
         this.unlock();
 
@@ -101,21 +101,21 @@ public abstract class MixinPalettedContainer<T> implements LithiumPaletteResizeL
      */
     @SuppressWarnings({"unchecked", "ConstantConditions"})
     @Overwrite
-    private void setPaletteSize(int size) {
-        if (size != this.paletteSize) {
-            this.paletteSize = size;
-            if (this.paletteSize <= 2) {
-                this.paletteSize = 2;
-                this.palette = new ArrayPalette<>(this.idList, this.paletteSize, (PalettedContainer<T>) (Object) this, this.elementDeserializer);
-            } else if (this.paletteSize <= 8) {
-                this.palette = new LithiumHashPalette<>(this.idList, this.paletteSize, this, this.elementDeserializer, this.elementSerializer);
+    private void setBits(int size) {
+        if (size != this.bits) {
+            this.bits = size;
+            if (this.bits <= 2) {
+                this.bits = 2;
+                this.palette = new PaletteArray<>(this.registry, this.bits, (PalettedContainer<T>) (Object) this, this.deserializer);
+            } else if (this.bits <= 8) {
+                this.palette = new LithiumPaletteHashMap<>(this.registry, this.bits, this, this.deserializer, this.serializer);
             } else {
-                this.paletteSize = MathHelper.log2DeBruijn(this.idList.size());
-                this.palette = this.fallbackPalette;
+                this.bits = MathHelper.log2DeBruijn(this.registry.size());
+                this.palette = this.registryPalette;
             }
 
-            this.palette.getIndex(this.field_12935);
-            this.data = new PackedIntegerArray(this.paletteSize, 4096);
+            this.palette.idFor(this.defaultState);
+            this.storage = new BitArray(this.bits, 4096);
         }
     }
 

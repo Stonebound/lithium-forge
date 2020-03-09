@@ -1,11 +1,11 @@
 package me.jellysquid.mods.lithium.common.world.scheduler;
 
-import net.minecraft.world.ScheduledTick;
+import net.minecraft.world.NextTickListEntry;
 
 /**
- * A wrapper type for {@link ScheduledTick} which adds fields to mark the state of the tick in the scheduler's pipeline.
+ * A wrapper type for {@link NextTickListEntry} which adds fields to mark the state of the tick in the scheduler's pipeline.
  */
-public class TickEntry<T> extends ScheduledTick<T> {
+public class TickEntry<T> extends NextTickListEntry<T> {
     /**
      * True if the tick has been scheduled for execution. After the tick has been selected for execution during the
      * current world tick, this is unset and the executing flag is set. The tick can then no longer be re-scheduled
@@ -27,8 +27,8 @@ public class TickEntry<T> extends ScheduledTick<T> {
      */
     public boolean consumed = false;
 
-    public TickEntry(ScheduledTick<T> tick) {
-        super(tick.pos, tick.getObject(), tick.time, tick.priority);
+    public TickEntry(NextTickListEntry<T> tick) {
+        super(tick.position, tick.getTarget(), tick.scheduledTime, tick.priority);
     }
 }
 

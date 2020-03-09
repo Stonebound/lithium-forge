@@ -2,12 +2,9 @@ package me.jellysquid.mods.lithium.mixin.voxelshape.fast_shape_comparisons;
 
 import me.jellysquid.mods.lithium.common.shapes.VoxelShapeEmpty;
 import me.jellysquid.mods.lithium.common.shapes.VoxelShapeSimpleCube;
-import net.minecraft.util.BooleanBiFunction;
-import net.minecraft.util.math.Box;
-import net.minecraft.util.shape.BitSetVoxelSet;
-import net.minecraft.util.shape.VoxelSet;
-import net.minecraft.util.shape.VoxelShape;
-import net.minecraft.util.shape.VoxelShapes;
+import net.minecraft.util.math.shapes.*;
+import net.minecraft.util.math.AxisAlignedBB;
+import net.minecraft.util.math.shapes.BitSetVoxelShapePart;
 import org.spongepowered.asm.mixin.*;
 
 /**
@@ -18,7 +15,7 @@ public abstract class MixinVoxelShapes {
     @Mutable
     @Shadow
     @Final
-    public static VoxelShape UNBOUNDED;
+    public static VoxelShape INFINITY;
 
     @Mutable
     @Shadow
@@ -30,17 +27,17 @@ public abstract class MixinVoxelShapes {
     @Final
     private static VoxelShape EMPTY;
 
-    private static final VoxelSet FULL_CUBE_VOXELS;
+    private static final VoxelShapePart FULL_CUBE_VOXELS;
 
     static {
-        FULL_CUBE_VOXELS = new BitSetVoxelSet(1, 1, 1);
-        FULL_CUBE_VOXELS.set(0, 0, 0, true, true);
+        FULL_CUBE_VOXELS = new BitSetVoxelShapePart(1, 1, 1);
+        FULL_CUBE_VOXELS.setFilled(0, 0, 0, true, true);
 
-        UNBOUNDED = new VoxelShapeSimpleCube(FULL_CUBE_VOXELS, Double.NEGATIVE_INFINITY, Double.NEGATIVE_INFINITY, Double.NEGATIVE_INFINITY,
+        INFINITY = new VoxelShapeSimpleCube(FULL_CUBE_VOXELS, Double.NEGATIVE_INFINITY, Double.NEGATIVE_INFINITY, Double.NEGATIVE_INFINITY,
                 Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY);
 
         FULL_CUBE = new VoxelShapeSimpleCube(FULL_CUBE_VOXELS, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0);
-        EMPTY = new VoxelShapeEmpty(new BitSetVoxelSet(0, 0, 0));
+        EMPTY = new VoxelShapeEmpty(new BitSetVoxelShapePart(0, 0, 0));
     }
 
     /**
@@ -51,7 +48,7 @@ public abstract class MixinVoxelShapes {
      * @author JellySquid
      */
     @Overwrite
-    public static boolean unionCoversFullCube(VoxelShape a, VoxelShape b) {
+    public static boolean faceShapeCovers(VoxelShape a, VoxelShape b) {
         // At least one shape is a full cube and will match
         if (a == VoxelShapes.fullCube() || b == VoxelShapes.fullCube()) {
             return true;
@@ -66,11 +63,11 @@ public abstract class MixinVoxelShapes {
         }
 
         // Test each shape individually if they're non-empty and fail fast
-        if (!ae && VoxelShapes.matchesAnywhere(VoxelShapes.fullCube(), a, BooleanBiFunction.ONLY_FIRST)) {
+        if (!ae && VoxelShapes.compare(VoxelShapes.fullCube(), a, IBooleanFunction.ONLY_FIRST)) {
             return false;
         }
 
-        return be || !VoxelShapes.matchesAnywhere(VoxelShapes.fullCube(), b, BooleanBiFunction.ONLY_FIRST);
+        return be || !VoxelShapes.compare(VoxelShapes.fullCube(), b, IBooleanFunction.ONLY_FIRST);
     }
 
     /**
@@ -78,7 +75,7 @@ public abstract class MixinVoxelShapes {
      * @author JellySquid
      */
     @Overwrite
-    public static VoxelShape cuboid(Box box) {
-        return new VoxelShapeSimpleCube(FULL_CUBE_VOXELS, box.x1, box.y1, box.z1, box.x2, box.y2, box.z2);
+    public static VoxelShape create(AxisAlignedBB box) {
+        return new VoxelShapeSimpleCube(FULL_CUBE_VOXELS, box.minX, box.minY, box.minZ, box.maxX, box.maxY, box.maxZ);
     }
 }

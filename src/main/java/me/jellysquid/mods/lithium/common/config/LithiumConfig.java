@@ -8,12 +8,31 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Documentation of these options: https://github.com/jellysquid3/Lithium/wiki/Configuration-File
  */
 @SuppressWarnings("CanBeFinal")
 public class LithiumConfig {
+    private static final Lock cachedConfigLock = new ReentrantLock();
+    private static LithiumConfig cachedConfig;
+
+    public static LithiumConfig instance() {
+        cachedConfigLock.lock();
+
+        try {
+            if (cachedConfig == null) {
+                cachedConfig = LithiumConfig.load(new File("./config/lithium.toml"));
+            }
+
+            return cachedConfig;
+        } finally {
+            cachedConfigLock.unlock();
+        }
+    }
+
     @Category("ai")
     public static class AiConfig {
         @Option("use_fast_goal_selection")
@@ -23,7 +42,7 @@ public class LithiumConfig {
         public boolean useFastRaidLogic = true;
 
         @Option("use_nearby_entity_tracking")
-        public boolean useNearbyEntityTracking = true;
+        public boolean useNearbyEntityTracking = false; // TODO: fix in Forge!
 
         @Option("use_fast_brain")
         public boolean useFastBrain = true;

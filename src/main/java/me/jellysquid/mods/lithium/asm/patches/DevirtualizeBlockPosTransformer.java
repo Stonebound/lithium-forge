@@ -1,16 +1,8 @@
 package me.jellysquid.mods.lithium.asm.patches;
 
-import com.chocohead.mm.api.ClassTinkerers;
+import cpw.mods.modlauncher.api.INameMappingService;
 import me.jellysquid.mods.lithium.asm.FieldRef;
-import me.jellysquid.mods.lithium.asm.MethodRef;
-import me.jellysquid.mods.lithium.asm.consumers.*;
-import me.jellysquid.mods.lithium.asm.consumers.FieldRemapper.FieldMapping;
-import net.fabricmc.loader.api.FabricLoader;
-import net.fabricmc.loader.api.MappingResolver;
-import org.objectweb.asm.Opcodes;
-
-import java.util.Arrays;
-import java.util.Collections;
+import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 
 /**
  * The block position vector types in Minecraft (more formally known as BlockPos) can introduce a surprising amount of
@@ -51,10 +43,8 @@ public class DevirtualizeBlockPosTransformer {
     private static final String VEC3I_CLASS_NAME = "net.minecraft.class_2382";
 
     public static void install() {
-        MappingResolver remapper = FabricLoader.getInstance().getMappingResolver();
-
-        final String blockPosTarget = remapper.mapClassName("intermediary", BLOCK_POS_MUTABLE_CLASS_NAME);
-        final String vec3iTarget = remapper.mapClassName("intermediary", VEC3I_CLASS_NAME);
+        final String blockPosTarget = ObfuscationReflectionHelper.remapName(INameMappingService.Domain.CLASS, BLOCK_POS_MUTABLE_CLASS_NAME);
+        final String vec3iTarget = ObfuscationReflectionHelper.remapName(INameMappingService.Domain.CLASS, VEC3I_CLASS_NAME);
 
         // The mutable coordinate values which are re-implemented by BlockPos$Mutable
         final FieldRef blockPosX = FieldRef.intermediary(BLOCK_POS_MUTABLE_CLASS_NAME, "field_10986", "I"); // x
@@ -66,38 +56,38 @@ public class DevirtualizeBlockPosTransformer {
         final FieldRef vecY = FieldRef.intermediary(VEC3I_CLASS_NAME, "field_11174", "I"); // y
         final FieldRef vecZ = FieldRef.intermediary(VEC3I_CLASS_NAME, "field_11173", "I"); // z
 
-        ClassTinkerers.addTransformation(blockPosTarget, new PatchSetTransformer("Use mutable fields in Vec3i", Arrays.asList(
-                // Remove the copied x/y/z fields in BlockPos$Mutable
-                // This shouldn't break anything, as these fields could only be accessed through the getters and setters
-                // we will modify later. We also shouldn't expect that other mods will reflect-hack into them as again,
-                // they were exposed through getters/setters.
-                new FieldCleaner(blockPosX, blockPosY, blockPosZ),
-
-                // Remove the overrides for getX/Y/Z from Vec3i in BlockPos$Mutable
-                // The INVOKE instruction used by callees will typically point to the base methods in Vec3i, meaning
-                // that they will not know (or care) about whether or not these methods are being overridden. In the
-                // semi-rare case that a callee directly refers to these methods, the JVM will automatically use the
-                // super-class's base implementation.
-                new MethodCleaner(
-                        MethodRef.intermediary(VEC3I_CLASS_NAME, "method_10263", "()I"), // int getX()
-                        MethodRef.intermediary(VEC3I_CLASS_NAME, "method_10264", "()I"), // int getY()
-                        MethodRef.intermediary(VEC3I_CLASS_NAME, "method_10260", "()I")  // int getZ()
-                ),
-
-                // Replace all references to BlockPos$Mutable's x/y/z fields with Vec3i's x/y/z fields
-                // This will also take care of initializing the fields in Vec3i despite the super constructor call
-                // passing all zeroes, as the code immediately after which would originally update the cloned fields
-                // will now point to those in Vec3i.
-                new FieldRemapper(
-                        new FieldMapping(blockPosX, vecX),
-                        new FieldMapping(blockPosY, vecY),
-                        new FieldMapping(blockPosZ, vecZ)
-                )
-        )));
-
-        ClassTinkerers.addTransformation(vec3iTarget, new PatchSetTransformer("Modify mutability flags in Vec3i", Collections.singletonList(
-                // Set the access flags for the x/y/z fields in Vec3i to PROTECTED, stripping the final flag
-                new FieldAccessTransformer(Opcodes.ACC_PROTECTED, vecX, vecY, vecZ)
-        )));
+//        ClassTinkerers.addTransformation(blockPosTarget, new PatchSetTransformer("Use mutable fields in Vec3i", Arrays.asList(
+//                // Remove the copied x/y/z fields in BlockPos$Mutable
+//                // This shouldn't break anything, as these fields could only be accessed through the getters and setters
+//                // we will modify later. We also shouldn't expect that other mods will reflect-hack into them as again,
+//                // they were exposed through getters/setters.
+//                new FieldCleaner(blockPosX, blockPosY, blockPosZ),
+//
+//                // Remove the overrides for getX/Y/Z from Vec3i in BlockPos$Mutable
+//                // The INVOKE instruction used by callees will typically point to the base methods in Vec3i, meaning
+//                // that they will not know (or care) about whether or not these methods are being overridden. In the
+//                // semi-rare case that a callee directly refers to these methods, the JVM will automatically use the
+//                // super-class's base implementation.
+//                new MethodCleaner(
+//                        MethodRef.intermediary(VEC3I_CLASS_NAME, "method_10263", "()I"), // int getX()
+//                        MethodRef.intermediary(VEC3I_CLASS_NAME, "method_10264", "()I"), // int getY()
+//                        MethodRef.intermediary(VEC3I_CLASS_NAME, "method_10260", "()I")  // int getZ()
+//                ),
+//
+//                // Replace all references to BlockPos$Mutable's x/y/z fields with Vec3i's x/y/z fields
+//                // This will also take care of initializing the fields in Vec3i despite the super constructor call
+//                // passing all zeroes, as the code immediately after which would originally update the cloned fields
+//                // will now point to those in Vec3i.
+//                new FieldRemapper(
+//                        new FieldMapping(blockPosX, vecX),
+//                        new FieldMapping(blockPosY, vecY),
+//                        new FieldMapping(blockPosZ, vecZ)
+//                )
+//        )));
+//
+//        ClassTinkerers.addTransformation(vec3iTarget, new PatchSetTransformer("Modify mutability flags in Vec3i", Collections.singletonList(
+//                // Set the access flags for the x/y/z fields in Vec3i to PROTECTED, stripping the final flag
+//                new FieldAccessTransformer(Opcodes.ACC_PROTECTED, vecX, vecY, vecZ)
+//        )));
     }
 }

@@ -2,9 +2,9 @@ package me.jellysquid.mods.lithium.common.shapes;
 
 import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
 import it.unimi.dsi.fastutil.doubles.DoubleList;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.shape.VoxelSet;
-import net.minecraft.util.shape.VoxelShape;
+import net.minecraft.util.Direction;
+import net.minecraft.util.math.shapes.VoxelShape;
+import net.minecraft.util.math.shapes.VoxelShapePart;
 
 /**
  * An efficient implementation of {@link VoxelShape} for a shape with no vertices.
@@ -12,12 +12,12 @@ import net.minecraft.util.shape.VoxelShape;
 public class VoxelShapeEmpty extends VoxelShape {
     private static final DoubleList EMPTY_LIST = DoubleArrayList.wrap(new double[] { 0.0D });
 
-    public VoxelShapeEmpty(VoxelSet voxels) {
+    public VoxelShapeEmpty(VoxelShapePart voxels) {
         super(voxels);
     }
 
     @Override
-    protected DoubleList getPointPositions(Direction.Axis axis) {
+    protected DoubleList getValues(Direction.Axis axis) {
         return EMPTY_LIST;
     }
 
@@ -27,12 +27,12 @@ public class VoxelShapeEmpty extends VoxelShape {
     }
 
     @Override
-    public double getMinimum(Direction.Axis axis) {
+    public double getStart(Direction.Axis axis) {
         return Double.POSITIVE_INFINITY;
     }
 
     @Override
-    public double getMaximum(Direction.Axis axis) {
+    public double getEnd(Direction.Axis axis) {
         return Double.NEGATIVE_INFINITY;
     }
 

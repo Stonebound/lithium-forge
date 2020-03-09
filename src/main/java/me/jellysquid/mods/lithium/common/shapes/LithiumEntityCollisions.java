@@ -3,17 +3,17 @@ package me.jellysquid.mods.lithium.common.shapes;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityContext;
-import net.minecraft.util.BooleanBiFunction;
-import net.minecraft.util.CuboidBlockIterator;
+import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Box;
+import net.minecraft.util.math.CubeCoordinateIterator;
 import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.shape.VoxelShape;
-import net.minecraft.util.shape.VoxelShapes;
-import net.minecraft.world.BlockView;
-import net.minecraft.world.CollisionView;
-import net.minecraft.world.EntityView;
+import net.minecraft.util.math.shapes.IBooleanFunction;
+import net.minecraft.util.math.shapes.ISelectionContext;
+import net.minecraft.util.math.shapes.VoxelShape;
+import net.minecraft.util.math.shapes.VoxelShapes;
+import net.minecraft.world.IBlockReader;
+import net.minecraft.world.ICollisionReader;
+import net.minecraft.world.IEntityReader;
 import net.minecraft.world.border.WorldBorder;
 
 import java.util.*;
@@ -28,18 +28,18 @@ public class LithiumEntityCollisions {
      * Checks against the world border are replaced with our own optimized functions which do not go through the
      * VoxelShape system.
      */
-    public static Stream<VoxelShape> getBlockCollisions(CollisionView world, final Entity entity, Box entityBox) {
-        int minX = MathHelper.floor(entityBox.x1 - 1.0E-7D) - 1;
-        int maxX = MathHelper.floor(entityBox.x2 + 1.0E-7D) + 1;
-        int minY = MathHelper.floor(entityBox.y1 - 1.0E-7D) - 1;
-        int maxY = MathHelper.floor(entityBox.y2 + 1.0E-7D) + 1;
-        int minZ = MathHelper.floor(entityBox.z1 - 1.0E-7D) - 1;
-        int maxZ = MathHelper.floor(entityBox.z2 + 1.0E-7D) + 1;
+    public static Stream<VoxelShape> getBlockCollisions(ICollisionReader world, final Entity entity, AxisAlignedBB entityBox) {
+        int minX = MathHelper.floor(entityBox.minX - 1.0E-7D) - 1;
+        int maxX = MathHelper.floor(entityBox.maxX + 1.0E-7D) + 1;
+        int minY = MathHelper.floor(entityBox.minY - 1.0E-7D) - 1;
+        int maxY = MathHelper.floor(entityBox.maxY + 1.0E-7D) + 1;
+        int minZ = MathHelper.floor(entityBox.minZ - 1.0E-7D) - 1;
+        int maxZ = MathHelper.floor(entityBox.maxZ + 1.0E-7D) + 1;
 
-        final EntityContext context = entity == null ? EntityContext.absent() : EntityContext.of(entity);
-        final CuboidBlockIterator cuboidIt = new CuboidBlockIterator(minX, minY, minZ, maxX, maxY, maxZ);
+        final ISelectionContext context = entity == null ? ISelectionContext.dummy() : ISelectionContext.forEntity(entity);
+        final CubeCoordinateIterator cuboidIt = new CubeCoordinateIterator(minX, minY, minZ, maxX, maxY, maxZ);
         final BlockPos.Mutable pos = new BlockPos.Mutable();
-        final VoxelShape entityShape = VoxelShapes.cuboid(entityBox);
+        final VoxelShape entityShape = VoxelShapes.create(entityBox);
 
         return StreamSupport.stream(new Spliterators.AbstractSpliterator<VoxelShape>(Long.MAX_VALUE, Spliterator.NONNULL | Spliterator.IMMUTABLE) {
             boolean skipWorldBorderCheck = entity == null;
@@ -50,38 +50,38 @@ public class LithiumEntityCollisions {
 
                     WorldBorder border = world.getWorldBorder();
 
-                    boolean isInsideBorder = LithiumEntityCollisions.isBoxFullyWithinWorldBorder(border, entity.getBoundingBox().contract(1.0E-7D));
-                    boolean isCrossingBorder = LithiumEntityCollisions.isBoxFullyWithinWorldBorder(border, entity.getBoundingBox().expand(1.0E-7D));
+                    boolean isInsideBorder = LithiumEntityCollisions.isBoxFullyWithinWorldBorder(border, entity.getBoundingBox().shrink(1.0E-7D));
+                    boolean isCrossingBorder = LithiumEntityCollisions.isBoxFullyWithinWorldBorder(border, entity.getBoundingBox().grow(1.0E-7D));
 
                     if (!isInsideBorder && isCrossingBorder) {
-                        consumer.accept(border.asVoxelShape());
+                        consumer.accept(border.getShape());
 
                         return true;
                     }
                 }
 
-                while (cuboidIt.step()) {
+                while (cuboidIt.hasNext()) {
                     int x = cuboidIt.getX();
                     int y = cuboidIt.getY();
                     int z = cuboidIt.getZ();
 
-                    int edgesHit = cuboidIt.getEdgeCoordinatesCount();
+                    int edgesHit = cuboidIt.numBoundariesTouched();
 
                     if (edgesHit == 3) {
                         continue;
                     }
 
-                    BlockView chunk = world.getExistingChunk(x >> 4, z >> 4);
+                    IBlockReader chunk = world.getBlockReader(x >> 4, z >> 4);
 
                     if (chunk == null) {
                         continue;
                     }
 
-                    pos.set(x, y, z);
+                    pos.setPos(x, y, z);
 
                     BlockState state = chunk.getBlockState(pos);
 
-                    if (edgesHit == 1 && !state.exceedsCube()) {
+                    if (edgesHit == 1 && !state.isCollisionShapeLargerThanFullBlock()) {
                         continue;
                     }
 
@@ -97,14 +97,14 @@ public class LithiumEntityCollisions {
 
                     if (blockShape == VoxelShapes.fullCube()) {
                         if (entityBox.intersects(x, y, z, x + 1.0D, y + 1.0D, z + 1.0D)) {
-                            consumer.accept(blockShape.offset(x, y, z));
+                            consumer.accept(blockShape.withOffset(x, y, z));
 
                             return true;
                         }
                     } else {
-                        VoxelShape shape = blockShape.offset(x, y, z);
+                        VoxelShape shape = blockShape.withOffset(x, y, z);
 
-                        if (VoxelShapes.matchesAnywhere(shape, entityShape, BooleanBiFunction.AND)) {
+                        if (VoxelShapes.compare(shape, entityShape, IBooleanFunction.AND)) {
                             consumer.accept(shape);
 
                             return true;
@@ -122,15 +122,15 @@ public class LithiumEntityCollisions {
      * the slower shape system.
      * @return True if the {@param box} is fully within the {@param border}, otherwise false.
      */
-    public static boolean isBoxFullyWithinWorldBorder(WorldBorder border, Box box) {
-        double wboxMinX = Math.floor(border.getBoundWest());
-        double wboxMinZ = Math.floor(border.getBoundNorth());
+    public static boolean isBoxFullyWithinWorldBorder(WorldBorder border, AxisAlignedBB box) {
+        double wboxMinX = Math.floor(border.minX());
+        double wboxMinZ = Math.floor(border.minZ());
 
-        double wboxMaxX = Math.ceil(border.getBoundEast());
-        double wboxMaxZ = Math.ceil(border.getBoundSouth());
+        double wboxMaxX = Math.ceil(border.maxX());
+        double wboxMaxZ = Math.ceil(border.maxZ());
 
-        return box.x1 >= wboxMinX && box.x1 < wboxMaxX && box.z1 >= wboxMinZ && box.z1 < wboxMaxZ &&
-                box.x2 >= wboxMinX && box.x2 < wboxMaxX && box.z2 >= wboxMinZ && box.z2 < wboxMaxZ;
+        return box.minX >= wboxMinX && box.minX < wboxMaxX && box.minZ >= wboxMinZ && box.minZ < wboxMaxZ &&
+                box.maxX >= wboxMinX && box.maxX < wboxMaxX && box.maxZ >= wboxMinZ && box.maxZ < wboxMaxZ;
     }
 
     /**
@@ -138,14 +138,14 @@ public class LithiumEntityCollisions {
      * Re-implements the function named above without stream code or unnecessary allocations. This can provide a small
      * boost in some situations (such as heavy entity crowding) and reduces the allocation rate significantly.
      */
-    public static Stream<VoxelShape> getEntityCollisions(EntityView view, Entity entity, Box box, Set<Entity> excluded) {
-        if (box.getAverageSideLength() < 1.0E-7D) {
+    public static Stream<VoxelShape> getEntityCollisions(IEntityReader view, Entity entity, AxisAlignedBB box, Set<Entity> excluded) {
+        if (box.getAverageEdgeLength() < 1.0E-7D) {
             return Stream.empty();
         }
 
-        Box selection = box.expand(1.0E-7D);
+        AxisAlignedBB selection = box.grow(1.0E-7D);
 
-        List<Entity> entities = view.getEntities(entity, selection);
+        List<Entity> entities = view.getEntitiesWithinAABBExcludingEntity(entity, selection);
         List<VoxelShape> shapes = new ArrayList<>();
 
         for (Entity otherEntity : entities) {
@@ -153,21 +153,21 @@ public class LithiumEntityCollisions {
                 continue;
             }
 
-            if (entity != null && entity.isConnectedThroughVehicle(otherEntity)) {
+            if (entity != null && entity.isRidingSameEntity(otherEntity)) {
                 continue;
             }
 
-            Box otherEntityBox = otherEntity.getCollisionBox();
+            AxisAlignedBB otherEntityBox = otherEntity.getCollisionBoundingBox();
 
             if (otherEntityBox != null && selection.intersects(otherEntityBox)) {
-                shapes.add(VoxelShapes.cuboid(otherEntityBox));
+                shapes.add(VoxelShapes.create(otherEntityBox));
             }
 
             if (entity != null) {
-                Box otherEntityHardBox = entity.getHardCollisionBox(otherEntity);
+                AxisAlignedBB otherEntityHardBox = entity.getCollisionBox(otherEntity);
 
                 if (otherEntityHardBox != null && selection.intersects(otherEntityHardBox)) {
-                    shapes.add(VoxelShapes.cuboid(otherEntityHardBox));
+                    shapes.add(VoxelShapes.create(otherEntityHardBox));
                 }
             }
         }

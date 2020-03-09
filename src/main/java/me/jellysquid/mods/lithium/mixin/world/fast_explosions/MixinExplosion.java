@@ -7,17 +7,16 @@ import net.minecraft.block.Blocks;
 import net.minecraft.enchantment.ProtectionEnchantment;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.damage.DamageSource;
+import net.minecraft.fluid.IFluidState;
+import net.minecraft.util.DamageSource;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.fluid.FluidState;
 import net.minecraft.util.math.*;
+import net.minecraft.world.Explosion;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.ChunkSection;
-import net.minecraft.world.explosion.Explosion;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -31,7 +30,7 @@ import java.util.Random;
 public abstract class MixinExplosion {
     @Shadow
     @Final
-    private float power;
+    private float size;
 
     @Shadow
     @Final
@@ -51,23 +50,23 @@ public abstract class MixinExplosion {
 
     @Shadow
     @Final
-    private Entity entity;
+    private Entity exploder;
 
     @Shadow
     @Final
-    private List<BlockPos> affectedBlocks;
+    private List<BlockPos> affectedBlockPositions;
 
     @Shadow
     public abstract DamageSource getDamageSource();
 
     @Shadow
-    public static float getExposure(Vec3d self, Entity entity) {
+    public static float getBlockDensity(Vec3d self, Entity entity) {
         throw new UnsupportedOperationException();
     }
 
     @Shadow
     @Final
-    private Map<PlayerEntity, Vec3d> affectedPlayers;
+    private Map<PlayerEntity, Vec3d> playerKnockbackMap;
 
     // The cached mutable block position used during block traversal.
     private final BlockPos.Mutable cachedPos = new BlockPos.Mutable();
@@ -83,8 +82,8 @@ public abstract class MixinExplosion {
      * @reason Optimizations for explosions
      * @author JellySquid
      */
-    @Inject(method = "collectBlocksAndDamageEntities", at = @At("HEAD"), cancellable = true)
-    public void collectBlocksAndDamageEntities(CallbackInfo ci) {
+    @Inject(method = "doExplosionA", at = @At("HEAD"), cancellable = true)
+    public void doExplosionA(CallbackInfo ci) {
         // We don't want to use an Overwrite here as it can conflict with other mods modifying this code path and will
         // crash the game. This *will* cause issues with other mods which transform this method, but it shouldn't break
         // anything critical.
@@ -97,7 +96,7 @@ public abstract class MixinExplosion {
         // compared to a memory allocation and associated overhead of hashing real objects in a set.
         final LongOpenHashSet touched = new LongOpenHashSet(6 * 6 * 6);
 
-        final Random random = this.world.random;
+        final Random random = this.world.rand;
 
         // Explosions work by casting many rays through the world from the origin of the explosion
         for (int rayX = 0; rayX < 16; ++rayX) {
@@ -124,7 +123,7 @@ public abstract class MixinExplosion {
         // We can now iterate back over the set of positions we modified and re-build BlockPos objects from them
         // This will only allocate as many objects as there are in the set, where otherwise we would allocate them
         // each step of a every ray.
-        List<BlockPos> affectedBlocks = this.affectedBlocks;
+        List<BlockPos> affectedBlocks = this.affectedBlockPositions;
 
         LongIterator it = touched.iterator();
 
@@ -142,7 +141,7 @@ public abstract class MixinExplosion {
         double normY = vecY / dist;
         double normZ = vecZ / dist;
 
-        float strength = this.power * (0.7F + (random.nextFloat() * 0.6F));
+        float strength = this.size * (0.7F + (random.nextFloat() * 0.6F));
 
         double stepX = this.x;
         double stepY = this.y;
@@ -197,11 +196,11 @@ public abstract class MixinExplosion {
      */
     private float traverseBlock(float strength, int blockX, int blockY, int blockZ, LongOpenHashSet touched) {
         // Early-exit if the y-coordinate is out of bounds.
-        if (World.isHeightInvalid(blockY)) {
+        if (World.isYOutOfBounds(blockY)) {
             return 0.0f;
         }
 
-        BlockPos pos = this.cachedPos.set(blockX, blockY, blockZ);
+        BlockPos pos = this.cachedPos.setPos(blockX, blockY, blockZ);
 
         int chunkX = blockX >> 4;
         int chunkZ = blockZ >> 4;
@@ -223,7 +222,7 @@ public abstract class MixinExplosion {
         if (chunk != null) {
             // We operate directly on chunk sections to avoid interacting with BlockPos and to squeeze out as much
             // performance as possible here
-            ChunkSection section = chunk.getSectionArray()[blockY >> 4];
+            ChunkSection section = chunk.getSections()[blockY >> 4];
 
             // If the section doesn't exist or it's empty, assume that the block is air
             if (section != null && !section.isEmpty()) {
@@ -235,14 +234,14 @@ public abstract class MixinExplosion {
                     // Rather than query the fluid state from the container as we just did with the block state, we can
                     // simply ask the block state we retrieved what fluid it has. This is exactly what the call would
                     // do anyways, except that it would have to retrieve the block state a second time, adding overhead.
-                    FluidState fluidState = blockState.getFluidState();
+                    IFluidState fluidState = blockState.getFluidState();
 
                     // Pick the highest resistance value between the block and fluid
-                    float resistance = Math.max(blockState.getBlock().getBlastResistance(), fluidState.getBlastResistance());
+                    float resistance = Math.max(blockState.getBlock().getExplosionResistance(), fluidState.getExplosionResistance());
 
                     // If this explosion was caused by an entity, allow for it to modify the resistance of this position
-                    if (this.entity != null) {
-                        resistance = this.entity.getEffectiveExplosionResistance((Explosion) (Object) this, this.world, pos, blockState, fluidState, resistance);
+                    if (this.exploder != null) {
+                        resistance = this.exploder.getExplosionResistance((Explosion) (Object) this, this.world, pos, blockState, fluidState, resistance);
                     }
 
                     // Calculate how much this block space will resist an explosion's ray
@@ -254,8 +253,8 @@ public abstract class MixinExplosion {
         // Check if this ray is still strong enough to break blocks, and if so, add this position to the set
         // of positions to destroy
         if ((strength - totalResistance) > 0.0F) {
-            if ((this.entity == null) || this.entity.canExplosionDestroyBlock((Explosion) (Object) this, this.world, pos, blockState, strength)) {
-                touched.add(pos.asLong());
+            if ((this.exploder == null) || this.exploder.canExplosionDestroyBlock((Explosion) (Object) this, this.world, pos, blockState, strength)) {
+                touched.add(pos.toLong());
             }
         }
 
@@ -264,7 +263,7 @@ public abstract class MixinExplosion {
 
     // [VanillaCopy] Explosion#collectBlocksAndDamageEntities()
     private void damageEntities() {
-        float range = this.power * 2.0F;
+        float range = this.size * 2.0F;
 
         int minX = MathHelper.floor(this.x - (double) range - 1.0D);
         int maxX = MathHelper.floor(this.x + (double) range + 1.0D);
@@ -273,24 +272,24 @@ public abstract class MixinExplosion {
         int minZ = MathHelper.floor(this.z - (double) range - 1.0D);
         int maxZ = MathHelper.floor(this.z + (double) range + 1.0D);
 
-        List<Entity> entities = this.world.getEntities(this.entity, new Box(minX, minY, minZ, maxX, maxY, maxZ));
+        List<Entity> entities = this.world.getEntitiesWithinAABBExcludingEntity(this.exploder, new AxisAlignedBB(minX, minY, minZ, maxX, maxY, maxZ));
 
         Vec3d selfPos = new Vec3d(this.x, this.y, this.z);
 
         for (Entity entity : entities) {
-            if (entity.isImmuneToExplosion()) {
+            if (entity.isImmuneToExplosions()) {
                 continue;
             }
 
-            double damageScale = MathHelper.sqrt(entity.squaredDistanceTo(selfPos)) / range;
+            double damageScale = MathHelper.sqrt(entity.getDistanceSq(selfPos)) / range;
 
             if (damageScale > 1.0D) {
                 continue;
             }
 
-            double distXSq = entity.getX() - this.x;
-            double distYSq = entity.getEyeY() - this.y;
-            double distZSq = entity.getZ() - this.z;
+            double distXSq = entity.getPosX() - this.x;
+            double distYSq = entity.getPosYEye() - this.y;
+            double distZSq = entity.getPosZ() - this.z;
 
             double dist = MathHelper.sqrt((distXSq * distXSq) + (distYSq * distYSq) + (distZSq * distZSq));
 
@@ -302,24 +301,24 @@ public abstract class MixinExplosion {
             distYSq = distYSq / dist;
             distZSq = distZSq / dist;
 
-            double exposure = getExposure(selfPos, entity);
+            double exposure = getBlockDensity(selfPos, entity);
             double damage = (1.0D - damageScale) * exposure;
 
-            entity.damage(this.getDamageSource(), (int) (((((damage * damage) + damage) / 2.0D) * 7.0D * (double) range) + 1.0D));
+            entity.attackEntityFrom(this.getDamageSource(), (int) (((((damage * damage) + damage) / 2.0D) * 7.0D * (double) range) + 1.0D));
 
             double knockback = damage;
 
             if (entity instanceof LivingEntity) {
-                knockback = ProtectionEnchantment.transformExplosionKnockback((LivingEntity) entity, damage);
+                knockback = ProtectionEnchantment.getBlastDamageReduction((LivingEntity) entity, damage);
             }
 
-            entity.setVelocity(entity.getVelocity().add(distXSq * knockback, distYSq * knockback, distZSq * knockback));
+            entity.setMotion(entity.getMotion().add(distXSq * knockback, distYSq * knockback, distZSq * knockback));
 
             if (entity instanceof PlayerEntity) {
                 PlayerEntity player = (PlayerEntity) entity;
 
-                if (!player.isSpectator() && (!player.isCreative() || !player.abilities.flying)) {
-                    this.affectedPlayers.put(player, new Vec3d(distXSq * damage, distYSq * damage, distZSq * damage));
+                if (!player.isSpectator() && (!player.isCreative() || !player.abilities.isFlying)) {
+                    this.playerKnockbackMap.put(player, new Vec3d(distXSq * damage, distYSq * damage, distZSq * damage));
                 }
             }
         }

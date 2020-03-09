@@ -1,16 +1,16 @@
 package me.jellysquid.mods.lithium.mixin.chunk.fast_chunk_serialization;
 
-import me.jellysquid.mods.lithium.common.world.chunk.CompactingPackedIntegerArray;
-import me.jellysquid.mods.lithium.common.world.chunk.palette.LithiumHashPalette;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.util.IdList;
-import net.minecraft.util.PackedIntegerArray;
+import me.jellysquid.mods.lithium.common.world.chunk.CompactingBitArray;
+import me.jellysquid.mods.lithium.common.world.chunk.palette.LithiumPaletteHashMap;
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.nbt.ListNBT;
+import net.minecraft.util.BitArray;
+import net.minecraft.util.ObjectIntIdentityMap;
 import net.minecraft.util.math.MathHelper;
-import net.minecraft.world.chunk.ArrayPalette;
-import net.minecraft.world.chunk.BiMapPalette;
-import net.minecraft.world.chunk.Palette;
-import net.minecraft.world.chunk.PalettedContainer;
+import net.minecraft.util.palette.PaletteArray;
+import net.minecraft.util.palette.PalettedContainer;
+import net.minecraft.util.palette.PaletteHashMap;
+import net.minecraft.util.palette.IPalette;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -37,28 +37,28 @@ public abstract class MixinPalettedContainer<T> {
 
     @Shadow
     @Final
-    private T field_12935;
+    private T defaultState;
 
     @Shadow
     @Final
-    private IdList<T> idList;
+    private ObjectIntIdentityMap<T> registry;
 
     @Shadow
-    private int paletteSize;
-
-    @Shadow
-    @Final
-    private Function<CompoundTag, T> elementDeserializer;
+    private int bits;
 
     @Shadow
     @Final
-    private Function<T, CompoundTag> elementSerializer;
+    private Function<CompoundNBT, T> deserializer;
 
     @Shadow
-    protected PackedIntegerArray data;
+    @Final
+    private Function<T, CompoundNBT> serializer;
 
     @Shadow
-    private Palette<T> palette;
+    protected BitArray storage;
+
+    @Shadow
+    private IPalette<T> palette;
 
     /**
      * This patch incorporates a number of changes to significantly reduce the time needed to serialize.
@@ -72,48 +72,48 @@ public abstract class MixinPalettedContainer<T> {
      * @reason Optimize serialization
      * @author JellySquid
      */
-    @Inject(method = "write", at = @At("HEAD"), cancellable = true)
-    public void write(CompoundTag tag, String paletteKey, String dataKey, CallbackInfo ci) {
+    @Inject(method = "writeChunkPalette", at = @At("HEAD"), cancellable = true)
+    public void write(CompoundNBT tag, String paletteKey, String dataKey, CallbackInfo ci) {
         // We're using a fallback map and it doesn't need compaction!
-        if (this.paletteSize > 8) {
+        if (this.bits > 8) {
             return;
         }
 
         this.lock();
 
-        LithiumHashPalette<T> compactedPalette = new LithiumHashPalette<>(this.idList, this.paletteSize, null, this.elementDeserializer, this.elementSerializer);
-        compactedPalette.getIndex(this.field_12935);
+        LithiumPaletteHashMap<T> compactedPalette = new LithiumPaletteHashMap<>(this.registry, this.bits, null, this.deserializer, this.serializer);
+        compactedPalette.idFor(this.defaultState);
 
-        short[] remapped = ((CompactingPackedIntegerArray) this.data)
-                .compact(this.palette, compactedPalette, this.field_12935);
+        short[] remapped = ((CompactingBitArray) this.storage)
+                .compact(this.palette, compactedPalette, this.defaultState);
 
-        int originalIntSize = this.data.getElementBits();
+        int originalIntSize = this.storage.bitsPerEntry();
         int copyIntSize = Math.max(4, MathHelper.log2DeBruijn(compactedPalette.getSize()));
 
         // If the palette didn't change sizes, there's no reason to copy anything
-        if (this.palette instanceof LithiumHashPalette && originalIntSize == copyIntSize) {
-            long[] array = this.data.getStorage();
+        if (this.palette instanceof LithiumPaletteHashMap && originalIntSize == copyIntSize) {
+            long[] array = this.storage.getBackingLongArray();
             long[] copy = new long[array.length];
 
             System.arraycopy(array, 0, copy, 0, array.length);
 
-            ListTag paletteTag = new ListTag();
-            ((LithiumHashPalette<T>) this.palette).toTag(paletteTag);
+            ListNBT paletteTag = new ListNBT();
+            ((LithiumPaletteHashMap<T>) this.palette).toTag(paletteTag);
 
             tag.put(paletteKey, paletteTag);
             tag.putLongArray(dataKey, copy);
         } else {
-            PackedIntegerArray copy = new PackedIntegerArray(copyIntSize, 4096);
+            BitArray copy = new BitArray(copyIntSize, 4096);
 
             for (int i = 0; i < remapped.length; ++i) {
-                copy.set(i, remapped[i]);
+                copy.setAt(i, remapped[i]);
             }
 
-            ListTag paletteTag = new ListTag();
+            ListNBT paletteTag = new ListNBT();
             compactedPalette.toTag(paletteTag);
 
             tag.put(paletteKey, paletteTag);
-            tag.putLongArray(dataKey, copy.getStorage());
+            tag.putLongArray(dataKey, copy.getBackingLongArray());
         }
 
         this.unlock();
@@ -129,7 +129,7 @@ public abstract class MixinPalettedContainer<T> {
      * @author JellySquid
      */
     @Inject(method = "count", at = @At("HEAD"), cancellable = true)
-    public void count(PalettedContainer.CountConsumer<T> consumer, CallbackInfo ci) {
+    public void count(PalettedContainer.ICountConsumer<T> consumer, CallbackInfo ci) {
         int size = getPaletteSize(this.palette);
 
         // We don't know how many items are in the palette, so this optimization cannot be done
@@ -139,10 +139,10 @@ public abstract class MixinPalettedContainer<T> {
 
         int[] counts = new int[size];
 
-        this.data.forEach(i -> counts[i]++);
+        this.storage.getAll(i -> counts[i]++);
 
         for (int i = 0; i < counts.length; i++) {
-            consumer.accept(this.palette.getByIndex(i), counts[i]);
+            consumer.accept(this.palette.get(i), counts[i]);
         }
 
         ci.cancel();
@@ -151,13 +151,13 @@ public abstract class MixinPalettedContainer<T> {
     /**
      * Try to determine the number of elements in a palette, otherwise return -1 to indicate that it is unknown.
      */
-    private static int getPaletteSize(Palette<?> palette) {
-        if (palette instanceof BiMapPalette<?>) {
-            return ((BiMapPalette<?>) palette).getIndexBits();
-        } else if (palette instanceof LithiumHashPalette<?>) {
-            return ((LithiumHashPalette<?>) palette).getSize();
-        } else if (palette instanceof ArrayPalette<?>) {
-            return ((ArrayPalette<?>) palette).getSize();
+    private static int getPaletteSize(IPalette<?> palette) {
+        if (palette instanceof PaletteHashMap<?>) {
+            return ((PaletteHashMap<?>) palette).getPaletteSize();
+        } else if (palette instanceof LithiumPaletteHashMap<?>) {
+            return ((LithiumPaletteHashMap<?>) palette).getSize();
+        } else if (palette instanceof PaletteArray<?>) {
+            return ((PaletteArray<?>) palette).getPaletteSize();
         }
 
         return -1;

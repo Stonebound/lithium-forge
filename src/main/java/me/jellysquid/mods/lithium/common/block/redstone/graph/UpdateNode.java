@@ -5,11 +5,11 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.RedstoneWireBlock;
+import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
 import net.minecraft.world.IWorld;
+import net.minecraft.world.IWorldReader;
 import net.minecraft.world.World;
-import net.minecraft.world.WorldView;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -120,7 +120,7 @@ public class UpdateNode {
             return 0;
         }
 
-        return this.getBlockState().getStrongRedstonePower(this.getWorld(), this.getPosition(), dir);
+        return this.getBlockState().getStrongPower(this.getWorld(), this.getPosition(), dir);
     }
 
     /**
@@ -132,7 +132,7 @@ public class UpdateNode {
             return this.getOutgoingWirePower();
         }
 
-        return this.getBlockState().getWeakRedstonePower(this.getWorld(), this.getPosition(), dir);
+        return this.getBlockState().getWeakPower(this.getWorld(), this.getPosition(), dir);
     }
 
     /**
@@ -203,7 +203,7 @@ public class UpdateNode {
         if (this.state.getBlock() == Blocks.REDSTONE_WIRE) {
             this.type = UpdateNodeBlockType.WIRE;
             this.currentWirePower = this.state.get(RedstoneWireBlock.POWER).byteValue();
-        } else if (this.state.isSimpleFullBlock(this.getWorld(), this.getPosition())) {
+        } else if (this.state.isCollisionShapeOpaque(this.getWorld(), this.getPosition())) {
             this.type = UpdateNodeBlockType.FULL_BLOCK;
             this.currentWirePower = 0;
         } else {
@@ -255,11 +255,11 @@ public class UpdateNode {
     public boolean canSupportWireBlock() {
         this.invalidateWorldState();
 
-        WorldView world = this.getWorld();
+        IWorldReader world = this.getWorld();
         BlockState state = this.getBlockState();
         BlockPos pos = this.getPosition();
 
-        return state.isSideSolidFullSquare(world, pos, Direction.UP) || state.getBlock() == Blocks.HOPPER;
+        return state.isSolidSide(world, pos, Direction.UP) || state.getBlock() == Blocks.HOPPER;
     }
 
     /**
@@ -269,7 +269,7 @@ public class UpdateNode {
      * signals.
      */
     public void destroyWire() {
-        Block.dropStacks(this.getBlockState(), this.getWorld(), this.getPosition());
+        Block.spawnDrops(this.getBlockState(), this.getWorld(), this.getPosition());
 
         this.getWorld().removeBlock(this.getPosition(), false);
     }
@@ -334,7 +334,7 @@ public class UpdateNode {
         BlockState state = updateObservers ? this.getUpdatedBlockState(origin, dir) : this.getBlockState();
 
         if (state.getBlock() != Blocks.REDSTONE_WIRE) {
-            state.neighborUpdate(this.getWorld(), this.getPosition(), Blocks.REDSTONE_WIRE, origin.getPosition(), false);
+            state.neighborChanged(this.getWorld(), this.getPosition(), Blocks.REDSTONE_WIRE, origin.getPosition(), false);
         }
     }
 
@@ -345,7 +345,7 @@ public class UpdateNode {
         BlockState state = this.getBlockState();
 
         if (state.getBlock() != Blocks.REDSTONE_WIRE) {
-            BlockState newState = state.getStateForNeighborUpdate(dir.getOpposite(), state, this.getWorld(), this.getPosition(), origin.getPosition());
+            BlockState newState = state.updatePostPlacement(dir.getOpposite(), state, this.getWorld(), this.getPosition(), origin.getPosition());
             replaceBlock(state, newState, this.getWorld(), this.getPosition());
 
             state = newState;
@@ -360,11 +360,11 @@ public class UpdateNode {
         }
 
         if (updatedState.isAir()) {
-            if (world.isClient()) {
+            if (world.isRemote()) {
                 return;
             }
 
-            world.breakBlock(pos, true);
+            world.destroyBlock(pos, true);
         } else {
             this.graph.getBlockAccess().setBlockState(pos, updatedState);
         }

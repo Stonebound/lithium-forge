@@ -39,11 +39,11 @@ public abstract class MixinLivingEntity extends Entity {
      */
     @Overwrite
     public BlockState getBlockState() {
-        int x = MathHelper.floor(this.getX());
-        int y = MathHelper.floor(this.getY());
-        int z = MathHelper.floor(this.getZ());
+        int x = MathHelper.floor(this.getPosX());
+        int y = MathHelper.floor(this.getPosY());
+        int z = MathHelper.floor(this.getPosZ());
 
-        long pos = BlockPos.asLong(x, y, z);
+        long pos = BlockPos.pack(x, y, z);
 
         if (this.lastPos == pos) {
             return this.lastStateAtFeet;

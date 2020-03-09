@@ -2,12 +2,12 @@ package me.jellysquid.mods.lithium.mixin.ai.nearby_entity_tracking;
 
 import me.jellysquid.mods.lithium.common.entity.tracker.EntityTrackerEngine;
 import me.jellysquid.mods.lithium.common.entity.tracker.WorldWithEntityTrackerEngine;
-import net.minecraft.util.profiler.Profiler;
+import net.minecraft.profiler.IProfiler;
 import net.minecraft.world.World;
-import net.minecraft.world.chunk.ChunkManager;
+import net.minecraft.world.chunk.AbstractChunkProvider;
 import net.minecraft.world.dimension.Dimension;
 import net.minecraft.world.dimension.DimensionType;
-import net.minecraft.world.level.LevelProperties;
+import net.minecraft.world.storage.WorldInfo;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -26,7 +26,7 @@ public class MixinWorld implements WorldWithEntityTrackerEngine {
      * Initialize the {@link EntityTrackerEngine} which all entities of the world will interact with.
      */
     @Inject(method = "<init>", at = @At("RETURN"))
-    private void init(LevelProperties levelProperties, DimensionType dimensionType, BiFunction<World, Dimension, ChunkManager> chunkManagerProvider, Profiler profiler, boolean isClient, CallbackInfo ci) {
+    private void init(WorldInfo levelProperties, DimensionType dimensionType, BiFunction<World, Dimension, AbstractChunkProvider> chunkManagerProvider, IProfiler profiler, boolean isClient, CallbackInfo ci) {
         this.tracker = new EntityTrackerEngine();
     }
 

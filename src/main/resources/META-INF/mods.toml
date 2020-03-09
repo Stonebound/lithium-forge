@@ -1,0 +1,18 @@
+modLoader="javafml"
+loaderVersion="[31,)"
+issueTrackerURL="https://github.com/jellysquid/lithium/issues"
+
+[[mods]]
+modId="lithium"
+version="${file.jarVersion}"
+displayName="Lithium"
+displayURL="https://www.curseforge.com/minecraft/mc-mods/lithium"
+logoFile="icon.png"
+authors="JellySquid"
+description='''
+Lithium is an free and open-source optimization mod for Minecraft which makes a wide range of performance improvements to the game.
+
+You can help support development through making a pledge to my Patreon: https://patreon.com/jellysquid
+
+You can find the source code under the GNU LGPLv3 on GitHub: https://github.com/jellysquid3/lithium
+'''

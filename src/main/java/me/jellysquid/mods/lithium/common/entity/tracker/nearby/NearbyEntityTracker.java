@@ -52,15 +52,15 @@ public class NearbyEntityTracker<T extends LivingEntity> implements NearbyEntity
     }
 
     public T getClosestEntity() {
-        double x = this.self.getX();
-        double y = this.self.getY();
-        double z = this.self.getZ();
+        double x = this.self.getPosX();
+        double y = this.self.getPosY();
+        double z = this.self.getPosZ();
 
         T nearest = null;
         double nearestDistance = Double.POSITIVE_INFINITY;
 
         for (T entity : this.nearby) {
-            double distance = entity.squaredDistanceTo(x, y, z);
+            double distance = entity.getDistanceSq(x, y, z);
 
             if (distance < nearestDistance) {
                 nearest = entity;

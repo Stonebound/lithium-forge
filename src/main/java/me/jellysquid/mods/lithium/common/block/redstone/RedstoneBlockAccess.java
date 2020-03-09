@@ -2,13 +2,13 @@ package me.jellysquid.mods.lithium.common.block.redstone;
 
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
-import net.minecraft.server.world.ServerChunkManager;
+import net.minecraft.world.server.ServerChunkProvider;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.World;
-import net.minecraft.world.chunk.ChunkManager;
+import net.minecraft.world.chunk.AbstractChunkProvider;
+import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.ChunkSection;
-import net.minecraft.world.chunk.WorldChunk;
 
 /**
  * Provides a view of the world for getting/setting redstone wire states. This avoids going through the slow
@@ -16,14 +16,14 @@ import net.minecraft.world.chunk.WorldChunk;
  */
 public class RedstoneBlockAccess {
     private final World world;
-    private final ChunkManager chunkManager;
+    private final AbstractChunkProvider chunkManager;
 
-    private WorldChunk prev;
+    private Chunk prev;
     private long prevPos;
 
     public RedstoneBlockAccess(World world) {
         this.world = world;
-        this.chunkManager = world.getChunkManager();
+        this.chunkManager = world.getChunkProvider();
 
         this.clear();
     }
@@ -38,10 +38,10 @@ public class RedstoneBlockAccess {
         int x = pos.getX();
         int z = pos.getZ();
 
-        WorldChunk chunk = this.getChunk(x >> 4, z >> 4);
+        Chunk chunk = this.getChunk(x >> 4, z >> 4);
 
         if (chunk != null) {
-            ChunkSection section = chunk.getSectionArray()[y >> 4];
+            ChunkSection section = chunk.getSections()[y >> 4];
 
             if (section != null) {
                 return section.getBlockState(x & 15, y & 15, z & 15);
@@ -56,28 +56,28 @@ public class RedstoneBlockAccess {
         int y = pos.getY();
         int z = pos.getZ();
 
-        WorldChunk chunk = this.getChunk(x >> 4, z >> 4);
+        Chunk chunk = this.getChunk(x >> 4, z >> 4);
 
         if (chunk != null) {
-            ChunkSection section = chunk.getSectionArray()[y >> 4];
+            ChunkSection section = chunk.getSections()[y >> 4];
 
             if (section != null) {
                 section.setBlockState(x & 15, y & 15, z & 15, state);
 
-                if (this.chunkManager instanceof ServerChunkManager) {
-                    ((ServerChunkManager) this.chunkManager).markForUpdate(pos);
+                if (this.chunkManager instanceof ServerChunkProvider) {
+                    ((ServerChunkProvider) this.chunkManager).markBlockChanged(pos);
                 }
             }
         }
     }
 
-    private WorldChunk getChunk(int x, int z) {
-        if (ChunkPos.toLong(x, z) == this.prevPos) {
+    private Chunk getChunk(int x, int z) {
+        if (ChunkPos.asLong(x, z) == this.prevPos) {
             return this.prev;
         }
 
         this.prev = this.world.getChunk(x, z);
-        this.prevPos = ChunkPos.toLong(x, z);
+        this.prevPos = ChunkPos.asLong(x, z);
 
         return this.prev;
     }

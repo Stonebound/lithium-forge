@@ -1,7 +1,7 @@
 package me.jellysquid.mods.lithium.mixin.small_tag_arrays;
 
-import net.minecraft.tag.Tag;
-import net.minecraft.util.Identifier;
+import net.minecraft.tags.Tag;
+import net.minecraft.util.ResourceLocation;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
@@ -17,15 +17,15 @@ import java.util.Set;
 public class MixinTag<T> {
     @Shadow
     @Final
-    private Set<T> values;
+    private Set<T> taggedItems;
 
     private T[] valuesSmallArray;
 
-    @Inject(method = "<init>(Lnet/minecraft/util/Identifier;Ljava/util/Collection;Z)V", at = @At("RETURN"))
-    private void postConstructed(Identifier id, Collection<Tag.Entry<T>> collection, boolean ordered, CallbackInfo ci) {
-        if (this.values.size() < 6) {
+    @Inject(method = "<init>(Lnet/minecraft/util/ResourceLocation;Ljava/util/Collection;ZZ)V", at = @At("RETURN"))
+    private void postConstructed(ResourceLocation id, Collection<Tag.ITagEntry<T>> entries, boolean linked, boolean replace, CallbackInfo ci) {
+        if (this.taggedItems.size() < 6) {
             //noinspection unchecked
-            this.valuesSmallArray = (T[]) this.values.toArray();
+            this.valuesSmallArray = (T[]) this.taggedItems.toArray();
         }
     }
 
@@ -47,7 +47,7 @@ public class MixinTag<T> {
 
             return false;
         } else {
-            return this.values.contains(obj);
+            return this.taggedItems.contains(obj);
         }
     }
 

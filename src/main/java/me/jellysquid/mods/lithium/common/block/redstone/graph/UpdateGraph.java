@@ -20,11 +20,11 @@ public class UpdateGraph implements Iterable<UpdateNode> {
     }
 
     public UpdateNode get(BlockPos pos) {
-        return this.nodesByPosition.get(pos.asLong());
+        return this.nodesByPosition.get(pos.toLong());
     }
 
     public UpdateNode getOrCreateNode(BlockPos pos) {
-        return this.nodesByPosition.computeIfAbsent(pos.asLong(), id -> new UpdateNode(this, BlockPos.fromLong(id)));
+        return this.nodesByPosition.computeIfAbsent(pos.toLong(), id -> new UpdateNode(this, BlockPos.fromLong(id)));
     }
 
     public World getWorld() {

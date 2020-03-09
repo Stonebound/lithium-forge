@@ -3,11 +3,11 @@ package me.jellysquid.mods.lithium.common.shapes;
 import com.google.common.collect.Lists;
 import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
 import it.unimi.dsi.fastutil.doubles.DoubleList;
-import net.minecraft.util.math.AxisCycleDirection;
-import net.minecraft.util.math.Box;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.shape.VoxelSet;
-import net.minecraft.util.shape.VoxelShape;
+import net.minecraft.util.Direction;
+import net.minecraft.util.math.AxisAlignedBB;
+import net.minecraft.util.AxisRotation;
+import net.minecraft.util.math.shapes.VoxelShape;
+import net.minecraft.util.math.shapes.VoxelShapePart;
 
 import java.util.List;
 
@@ -19,7 +19,7 @@ public class VoxelShapeSimpleCube extends VoxelShape {
 
     private final double x1, y1, z1, x2, y2, z2;
 
-    public VoxelShapeSimpleCube(VoxelSet voxels, double x1, double y1, double z1, double x2, double y2, double z2) {
+    public VoxelShapeSimpleCube(VoxelShapePart voxels, double x1, double y1, double z1, double x2, double y2, double z2) {
         super(voxels);
 
         this.x1 = x1;
@@ -31,12 +31,12 @@ public class VoxelShapeSimpleCube extends VoxelShape {
     }
 
     @Override
-    public VoxelShape offset(double x, double y, double z) {
-        return new VoxelShapeSimpleCube(this.voxels, this.x1 + x, this.y1 + y, this.z1 + z, this.x2 + x, this.y2 + y, this.z2 + z);
+    public VoxelShape withOffset(double x, double y, double z) {
+        return new VoxelShapeSimpleCube(this.part, this.x1 + x, this.y1 + y, this.z1 + z, this.x2 + x, this.y2 + y, this.z2 + z);
     }
 
     @Override
-    public double calculateMaxDistance(AxisCycleDirection cycleDirection, Box box, double maxDist) {
+    public double getAllowedOffset(AxisRotation cycleDirection, AxisAlignedBB box, double maxDist) {
         if (Math.abs(maxDist) < EPSILON) {
             return 0.0D;
         }
@@ -50,27 +50,27 @@ public class VoxelShapeSimpleCube extends VoxelShape {
         return maxDist;
     }
 
-    private double calculatePenetration(AxisCycleDirection dir, Box box, double maxDist) {
+    private double calculatePenetration(AxisRotation dir, AxisAlignedBB box, double maxDist) {
         switch (dir) {
             case NONE:
-                return this.calculatePenetration(this.x1, this.x2, box.x1, box.x2, maxDist);
+                return this.calculatePenetration(this.x1, this.x2, box.minX, box.maxX, maxDist);
             case FORWARD:
-                return this.calculatePenetration(this.z1, this.z2, box.z1, box.z2, maxDist);
+                return this.calculatePenetration(this.z1, this.z2, box.minZ, box.maxZ, maxDist);
             case BACKWARD:
-                return this.calculatePenetration(this.y1, this.y2, box.y1, box.y2, maxDist);
+                return this.calculatePenetration(this.y1, this.y2, box.minY, box.maxY, maxDist);
             default:
                 throw new IllegalArgumentException();
         }
     }
 
-    private boolean intersects(AxisCycleDirection dir, Box box) {
+    private boolean intersects(AxisRotation dir, AxisAlignedBB box) {
         switch (dir) {
             case NONE:
-                return lessThan(this.y1, box.y2) && lessThan(box.y1, this.y2) && lessThan(this.z1, box.z2) && lessThan(box.z1, this.z2);
+                return lessThan(this.y1, box.maxY) && lessThan(box.minY, this.y2) && lessThan(this.z1, box.maxZ) && lessThan(box.minZ, this.z2);
             case FORWARD:
-                return lessThan(this.x1, box.x2) && lessThan(box.x1, this.x2) && lessThan(this.y1, box.y2) && lessThan(box.y1, this.y2);
+                return lessThan(this.x1, box.maxX) && lessThan(box.minX, this.x2) && lessThan(this.y1, box.maxY) && lessThan(box.minY, this.y2);
             case BACKWARD:
-                return lessThan(this.z1, box.z2) && lessThan(box.z1, this.z2) && lessThan(this.x1, box.x2) && lessThan(box.x1, this.x2);
+                return lessThan(this.z1, box.maxZ) && lessThan(box.minZ, this.z2) && lessThan(this.x1, box.maxX) && lessThan(box.minX, this.x2);
             default:
                 throw new IllegalArgumentException();
         }
@@ -105,27 +105,27 @@ public class VoxelShapeSimpleCube extends VoxelShape {
     }
 
     @Override
-    public List<Box> getBoundingBoxes() {
+    public List<AxisAlignedBB> toBoundingBoxList() {
         return Lists.newArrayList(this.getBoundingBox());
     }
 
     @Override
-    public Box getBoundingBox() {
-        return new Box(this.x1, this.y1, this.z1, this.x2, this.y2, this.z2);
+    public AxisAlignedBB getBoundingBox() {
+        return new AxisAlignedBB(this.x1, this.y1, this.z1, this.x2, this.y2, this.z2);
     }
 
     @Override
-    public double getMinimum(Direction.Axis axis) {
-        return axis.choose(this.x1, this.y1, this.z1);
+    public double getStart(Direction.Axis axis) {
+        return axis.getCoordinate(this.x1, this.y1, this.z1);
     }
 
     @Override
-    public double getMaximum(Direction.Axis axis) {
-        return axis.choose(this.x2, this.y2, this.z2);
+    public double getEnd(Direction.Axis axis) {
+        return axis.getCoordinate(this.x2, this.y2, this.z2);
     }
 
     @Override
-    protected double getPointPosition(Direction.Axis axis, int index) {
+    protected double getValueUnchecked(Direction.Axis axis, int index) {
         if (index < 0 || index > 1) {
             throw new ArrayIndexOutOfBoundsException();
         }
@@ -143,7 +143,7 @@ public class VoxelShapeSimpleCube extends VoxelShape {
     }
 
     @Override
-    protected DoubleList getPointPositions(Direction.Axis axis) {
+    protected DoubleList getValues(Direction.Axis axis) {
         switch (axis) {
             case X:
                 return DoubleArrayList.wrap(new double[]{this.x1, this.x2});
@@ -167,12 +167,12 @@ public class VoxelShapeSimpleCube extends VoxelShape {
     }
 
     @Override
-    protected int getCoordIndex(Direction.Axis axis, double coord) {
-        if (coord < this.getMinimum(axis)) {
+    protected int getClosestIndex(Direction.Axis axis, double coord) {
+        if (coord < this.getStart(axis)) {
             return -1;
         }
 
-        if (coord >= this.getMaximum(axis)) {
+        if (coord >= this.getEnd(axis)) {
             return 1;
         }
 

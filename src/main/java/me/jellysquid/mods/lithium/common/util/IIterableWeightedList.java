@@ -26,7 +26,7 @@ public interface IIterableWeightedList<U> extends Iterable<U> {
 
         @Override
         public U next() {
-            return this.inner.next().getElement();
+            return this.inner.next().func_220647_b();
         }
     }
 }

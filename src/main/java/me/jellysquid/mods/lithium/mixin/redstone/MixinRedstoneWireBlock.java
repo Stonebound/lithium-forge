@@ -16,9 +16,9 @@ public abstract class MixinRedstoneWireBlock {
      * @author JellySquid
      */
     @Overwrite
-    private BlockState update(World world, BlockPos pos, BlockState state) {
+    private BlockState updateSurroundingRedstone(World world, BlockPos pos, BlockState state) {
         // Wire updates are never processed on the client
-        if (world.isClient) {
+        if (world.isRemote) {
             return state;
         }
 
@@ -33,9 +33,9 @@ public abstract class MixinRedstoneWireBlock {
      * @author JellySquid
      */
     @Overwrite
-    public void onBlockRemoved(BlockState state, World world, BlockPos pos, BlockState newState, boolean moved) {
+    public void onReplaced(BlockState state, World world, BlockPos pos, BlockState newState, boolean moved) {
         // Wire updates are never processed on the client
-        if (world.isClient) {
+        if (world.isRemote) {
             return;
         }
 
@@ -54,7 +54,7 @@ public abstract class MixinRedstoneWireBlock {
      */
     @Overwrite
     public void onBlockAdded(BlockState state, World world, BlockPos pos, BlockState oldState, boolean moved) {
-        if (world.isClient) {
+        if (world.isRemote) {
             return;
         }
 

@@ -3,8 +3,8 @@ package me.jellysquid.mods.lithium.common.block.redstone;
 import me.jellysquid.mods.lithium.common.block.redstone.graph.UpdateFlag;
 import me.jellysquid.mods.lithium.common.block.redstone.graph.UpdateGraph;
 import me.jellysquid.mods.lithium.common.block.redstone.graph.UpdateNode;
+import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
 
 import java.util.ArrayDeque;

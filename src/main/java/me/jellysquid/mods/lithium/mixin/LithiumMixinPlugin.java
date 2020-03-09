@@ -1,6 +1,5 @@
 package me.jellysquid.mods.lithium.mixin;
 
-import me.jellysquid.mods.lithium.common.LithiumMod;
 import me.jellysquid.mods.lithium.common.config.LithiumConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -8,7 +7,6 @@ import org.objectweb.asm.tree.ClassNode;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
 
-import java.io.File;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -22,13 +20,9 @@ public class LithiumMixinPlugin implements IMixinConfigPlugin {
 
     @Override
     public void onLoad(String mixinPackage) {
-        LithiumConfig config = LithiumConfig.load(new File("./config/lithium.toml"));
-
-        this.setupMixins(config);
+        this.setupMixins(LithiumConfig.instance());
 
         this.logger.info("Lithium's configuration file was loaded successfully");
-
-        LithiumMod.CONFIG = config;
     }
 
     private void setupMixins(LithiumConfig config) {

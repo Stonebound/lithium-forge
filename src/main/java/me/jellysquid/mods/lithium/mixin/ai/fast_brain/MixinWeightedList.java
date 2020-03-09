@@ -13,10 +13,10 @@ import java.util.List;
 public class MixinWeightedList<U> implements IIterableWeightedList<U> {
     @Shadow
     @Final
-    protected List<WeightedList<U>.Entry<? extends U>> entries;
+    protected List<WeightedList<U>.Entry<? extends U>> field_220658_a;
 
     @Override
     public Iterator<U> iterator() {
-        return new IIterableWeightedList.ListIterator<>(this.entries.iterator());
+        return new IIterableWeightedList.ListIterator<>(this.field_220658_a.iterator());
     }
 }

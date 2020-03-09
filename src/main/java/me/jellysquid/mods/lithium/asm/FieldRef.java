@@ -1,7 +1,7 @@
 package me.jellysquid.mods.lithium.asm;
 
-import net.fabricmc.loader.api.FabricLoader;
-import net.fabricmc.loader.api.MappingResolver;
+import cpw.mods.modlauncher.api.INameMappingService;
+import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 
 import java.util.Objects;
 
@@ -23,10 +23,8 @@ public class FieldRef {
      * @param desc The type descriptor of the field
      */
     public static FieldRef intermediary(String owner, String name, String desc) {
-        MappingResolver remapper = FabricLoader.getInstance().getMappingResolver();
-
-        String className = remapper.mapClassName("intermediary", owner);
-        String fieldName = remapper.mapFieldName("intermediary", owner, name, desc);
+        String className = ObfuscationReflectionHelper.remapName(INameMappingService.Domain.CLASS, owner);
+        String fieldName = ObfuscationReflectionHelper.remapName(INameMappingService.Domain.FIELD, name);
 
         return new FieldRef(ASMUtil.getPathNotation(className), fieldName, desc);
     }

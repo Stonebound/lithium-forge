@@ -1,70 +1,115 @@
 buildscript {
     repositories {
+        maven { url = 'https://files.minecraftforge.net/maven' }
+        maven { url = 'https://repo.spongepowered.org/maven' }
+
         jcenter()
-        maven {
-            name = "Fabric"
-            url = "https://maven.fabricmc.net/"
-        }
-        maven {
-            name = "Forge"
-            url = "https://files.minecraftforge.net/maven/"
-        }
-        maven {
-            name = "Jitpack"
-            url 'https://jitpack.io/'
-        }
+        mavenCentral()
     }
     dependencies {
-        classpath 'com.github.Chocohead:fabric-loom:e5d69cb'
+        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '3.+', changing: true
+
+        classpath 'org.spongepowered:mixingradle:0.7-SNAPSHOT'
+        classpath 'com.github.jengelman.gradle.plugins:shadow:4.0.2'
     }
 }
 
-apply plugin: "fabric-loom"
-import net.fabricmc.loom.task.RemappingJar;
+apply plugin: 'net.minecraftforge.gradle'
+apply plugin: 'org.spongepowered.mixin'
+apply plugin: 'com.github.johnrengelman.shadow'
 
 sourceCompatibility = JavaVersion.VERSION_1_8
 targetCompatibility = JavaVersion.VERSION_1_8
 
-archivesBaseName = "${project.archives_base_name}-mc${project.minecraft_version}-fabric"
+archivesBaseName = "${project.archives_base_name}-mc${project.minecraft_version}-forge"
 version = project.mod_version
 group = project.maven_group
 
 repositories {
-    // Fabric-ASM
-    maven { url 'https://jitpack.io' }
+    mavenCentral()
+
+    maven { url 'https://repo.spongepowered.org/maven' }
 }
 
 minecraft {
-    refmapName = "mixins.lithium.refmap.json"
-    AT = file("src/main/resources/access-transformers.txt")
+    mappings channel: project.mappings_channel, version: project.mappings_version
+    accessTransformer = file("src/main/resources/META-INF/accesstransformer.cfg")
+
+    runs {
+        client {
+            workingDirectory project.file('run')
+
+            // Recommended logging level for the console
+            property 'forge.logging.console.level', 'debug'
+
+            mods {
+                lithium {
+                    source sourceSets.main
+                }
+            }
+        }
+
+        server {
+            workingDirectory project.file('run')
+
+            // Recommended logging level for the console
+            property 'forge.logging.console.level', 'debug'
+
+            mods {
+                lithium {
+                    source sourceSets.main
+                }
+            }
+        }
+
+        data {
+            workingDirectory project.file('run')
+
+            // Recommended logging level for the console
+            property 'forge.logging.console.level', 'debug'
+
+            args '--mod', 'lithium', '--all', '--output', file('src/generated/resources/')
+
+            mods {
+                lithium {
+                    source sourceSets.main
+                }
+            }
+        }
+    }
 }
 
+configurations {
+    shade
+    compile.extendsFrom shade
+}
 
 dependencies {
 	//to change the versions see the gradle.properties file
-	minecraft "com.mojang:minecraft:${project.minecraft_version}"
-	mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
-	modCompile "net.fabricmc:fabric-loader:${project.loader_version}"
+	minecraft "net.minecraftforge:forge:${project.forge_version}"
 
-    include "com.moandjiezana.toml:toml4j:0.7.2"
-    compile "com.moandjiezana.toml:toml4j:0.7.2"
-
-    include "com.github.Chocohead:Fabric-ASM:${project.fabric_asm_version}"
-    compile "com.github.Chocohead:Fabric-ASM:${project.fabric_asm_version}:dev"
+    shade "com.moandjiezana.toml:toml4j:0.7.2"
+    compile "org.spongepowered:mixin:0.8.1-SNAPSHOT"
 }
 
-processResources {
-	inputs.property "version", project.version
+jar {
+    manifest {
+        attributes([
+                "Specification-Title": "lithium",
+                "Specification-Vendor": "JellySquid",
+                "Specification-Version": "1",
+                "Implementation-Title": project.name,
+                "Implementation-Version": version,
+                "Implementation-Vendor" :"JellySquid",
+                "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ"),
+                "FMLAT": "lithium_at.cfg",
+                "MixinConnector": "me.jellysquid.mods.lithium.mixin.LithiumMixinConnector"
+        ])
+    }
+}
 
-	from(sourceSets.main.resources.srcDirs) {
-		include "fabric.mod.json"
-
-		expand "version": project.version
-	}
-
-	from(sourceSets.main.resources.srcDirs) {
-		exclude "fabric.mod.json"
-	}
+mixin {
+    add sourceSets.main, "mixins.lithium.refmap.json"
 }
 
 // ensure that the encoding is set to UTF-8, no matter what the system default is
@@ -74,21 +119,19 @@ tasks.withType(JavaCompile) {
 	options.encoding = "UTF-8"
 }
 
-// Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
-// if it is present.
-// If you remove this task, sources will not be generated.
-task sourcesJar(type: Jar, dependsOn: classes) {
-	classifier = "sources"
-	from sourceSets.main.allSource
+shadowJar {
+    relocate 'com.moandjiezana.toml', 'me.jellysquid.mods.lithium.shade.toml'
+    configurations = [ project.configurations.shade ]
+    classifier = 'mod'
+
+    dependencies {
+        exclude(dependency('com.google.code.gson:gson:.*'))
+    }
 }
 
-jar {
-	from "LICENSE.txt"
-}
+jar.finalizedBy shadowJar
 
-task modJar(type: RemappingJar, dependsOn: classes) {
-    classifier = "mod"
-    from sourceSets.main.output
-}
 
-build.dependsOn modJar
+reobf {
+    shadowJar {}
+}

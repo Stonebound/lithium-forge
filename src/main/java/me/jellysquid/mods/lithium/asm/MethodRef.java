@@ -1,7 +1,8 @@
 package me.jellysquid.mods.lithium.asm;
 
-import net.fabricmc.loader.api.FabricLoader;
-import net.fabricmc.loader.api.MappingResolver;
+
+import cpw.mods.modlauncher.api.INameMappingService;
+import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 
 import java.util.Objects;
 
@@ -22,9 +23,7 @@ public class MethodRef {
      * @param desc The type descriptor of the method
      */
     public static MethodRef intermediary(String owner, String name, String desc) {
-        MappingResolver remapper = FabricLoader.getInstance().getMappingResolver();
-
-        String methodName = remapper.mapMethodName("intermediary", owner, name, desc);
+        String methodName = ObfuscationReflectionHelper.remapName(INameMappingService.Domain.METHOD, name);
 
         return new MethodRef(methodName, desc);
     }

@@ -1,10 +1,12 @@
 package me.jellysquid.mods.lithium.mixin.ai.fast_brain.task;
 
+import me.jellysquid.mods.lithium.common.ai.ExtendedTask;
 import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.ai.brain.MemoryModuleState;
-import net.minecraft.entity.ai.brain.MemoryModuleType;
+import net.minecraft.entity.ai.brain.memory.MemoryModuleStatus;
+import net.minecraft.entity.ai.brain.memory.MemoryModuleType;
 import net.minecraft.entity.ai.brain.task.Task;
-import net.minecraft.util.Pair;
+import net.minecraft.util.Tuple;
+import net.minecraft.world.server.ServerWorld;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
@@ -18,19 +20,22 @@ import java.util.List;
 import java.util.Map;
 
 @Mixin(Task.class)
-public class MixinTask<E extends LivingEntity> {
+public abstract class MixinTask<E extends LivingEntity> implements ExtendedTask<E> {
     @Shadow
     @Final
-    private Map<MemoryModuleType<?>, MemoryModuleState> requiredMemoryState;
+    private Map<MemoryModuleType<?>, MemoryModuleStatus> requiredMemoryState;
 
-    private List<Pair<MemoryModuleType<?>, MemoryModuleState>> requiredMemoryStatesFlattened;
+    @Shadow
+    protected abstract boolean shouldContinueExecuting(ServerWorld worldIn, E entityIn, long gameTimeIn);
+
+    private List<Tuple<MemoryModuleType<?>, MemoryModuleStatus>> requiredMemoryStatesFlattened;
 
     @Inject(method = "<init>(Ljava/util/Map;II)V", at = @At("RETURN"))
-    private void init(Map<MemoryModuleType<?>, MemoryModuleState> map, int int_1, int int_2, CallbackInfo ci) {
-        List<Pair<MemoryModuleType<?>, MemoryModuleState>> flattened = new ArrayList<>(map.size());
+    private void init(Map<MemoryModuleType<?>, MemoryModuleStatus> map, int int_1, int int_2, CallbackInfo ci) {
+        List<Tuple<MemoryModuleType<?>, MemoryModuleStatus>> flattened = new ArrayList<>(map.size());
 
-        for (Map.Entry<MemoryModuleType<?>, MemoryModuleState> entry : this.requiredMemoryState.entrySet()) {
-            flattened.add(new Pair<>(entry.getKey(), entry.getValue()));
+        for (Map.Entry<MemoryModuleType<?>, MemoryModuleStatus> entry : this.requiredMemoryState.entrySet()) {
+            flattened.add(new Tuple<>(entry.getKey(), entry.getValue()));
         }
 
         this.requiredMemoryStatesFlattened = flattened;
@@ -41,13 +46,18 @@ public class MixinTask<E extends LivingEntity> {
      * @author JellySquid
      */
     @Overwrite
-    private boolean hasRequiredMemoryState(E entity) {
-        for (Pair<MemoryModuleType<?>, MemoryModuleState> entry : this.requiredMemoryStatesFlattened) {
-            if (!entity.getBrain().isMemoryInState(entry.getLeft(), entry.getRight())) {
+    private boolean hasRequiredMemories(E entity) {
+        for (Tuple<MemoryModuleType<?>, MemoryModuleStatus> entry : this.requiredMemoryStatesFlattened) {
+            if (!entity.getBrain().hasMemory(entry.getA(), entry.getB())) {
                 return false;
             }
         }
 
         return true;
+    }
+
+    @Override
+    public boolean bridge$shouldContinueExecuting(ServerWorld world, E entity, long time) {
+        return this.shouldContinueExecuting(world, entity, time);
     }
 }
