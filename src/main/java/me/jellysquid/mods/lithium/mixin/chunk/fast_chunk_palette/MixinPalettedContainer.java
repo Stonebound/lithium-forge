@@ -103,7 +103,7 @@ public abstract class MixinPalettedContainer<T> implements LithiumResizeCallback
      * @author JellySquid
      */
     @SuppressWarnings({"unchecked", "ConstantConditions"})
-    @Overwrite
+    @Overwrite(remap = false)
     private void setBits(int size, boolean forceBits) {
         if (size != this.bits) {
             this.bits = size;
