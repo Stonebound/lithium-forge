@@ -62,6 +62,9 @@ public abstract class MixinPalettedContainer<T> implements LithiumResizeCallback
     @Shadow
     public abstract void lock();
 
+    @Shadow
+    protected abstract void setBits(int bitsIn);
+
     /**
      * [VanillaCopy] PalettedContainer#onPaletteResized(int, T)
      * TODO: Use ATs to work around needing to re-implement this
@@ -101,7 +104,7 @@ public abstract class MixinPalettedContainer<T> implements LithiumResizeCallback
      */
     @SuppressWarnings({"unchecked", "ConstantConditions"})
     @Overwrite
-    private void setBits(int size) {
+    private void setBits(int size, boolean forceBits) {
         if (size != this.bits) {
             this.bits = size;
             if (this.bits <= 2) {
@@ -112,6 +115,10 @@ public abstract class MixinPalettedContainer<T> implements LithiumResizeCallback
             } else {
                 this.bits = MathHelper.log2DeBruijn(this.registry.size());
                 this.palette = this.registryPalette;
+                // FORGE: Used during deserialization to fix some network issues
+                if (forceBits) {
+                    this.bits = size;
+                }
             }
 
             this.palette.idFor(this.defaultState);

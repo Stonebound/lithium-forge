@@ -15,6 +15,7 @@ import net.minecraft.world.Explosion;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.ChunkSection;
+import net.minecraftforge.event.ForgeEventFactory;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -273,6 +274,9 @@ public abstract class MixinExplosion {
         int maxZ = MathHelper.floor(this.z + (double) range + 1.0D);
 
         List<Entity> entities = this.world.getEntitiesWithinAABBExcludingEntity(this.exploder, new AxisAlignedBB(minX, minY, minZ, maxX, maxY, maxZ));
+
+        // FORGE: Fire event for explosion detonation
+        ForgeEventFactory.onExplosionDetonate(this.world, (Explosion) (Object) this, entities, range);
 
         Vec3d selfPos = new Vec3d(this.x, this.y, this.z);
 
