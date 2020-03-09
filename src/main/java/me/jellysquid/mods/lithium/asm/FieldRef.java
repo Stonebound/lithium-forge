@@ -1,7 +1,6 @@
 package me.jellysquid.mods.lithium.asm;
 
 import cpw.mods.modlauncher.api.INameMappingService;
-import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 
 import java.util.Objects;
 
@@ -23,10 +22,10 @@ public class FieldRef {
      * @param desc The type descriptor of the field
      */
     public static FieldRef intermediary(String owner, String name, String desc) {
-        String className = ObfuscationReflectionHelper.remapName(INameMappingService.Domain.CLASS, owner);
-        String fieldName = ObfuscationReflectionHelper.remapName(INameMappingService.Domain.FIELD, name);
+        String className = NameUtil.deobfName(INameMappingService.Domain.CLASS, owner);
+        String fieldName = NameUtil.deobfName(INameMappingService.Domain.FIELD, name);
 
-        return new FieldRef(ASMUtil.getPathNotation(className), fieldName, desc);
+        return new FieldRef(className, fieldName, desc);
     }
 
     @Override

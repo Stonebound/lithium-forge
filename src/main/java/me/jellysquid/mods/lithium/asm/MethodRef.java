@@ -2,7 +2,6 @@ package me.jellysquid.mods.lithium.asm;
 
 
 import cpw.mods.modlauncher.api.INameMappingService;
-import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 
 import java.util.Objects;
 
@@ -18,12 +17,11 @@ public class MethodRef {
      * Creates a {@link MethodRef} using intermediary names which will be mapped to the appropriate method in the
      * current environment.
      *
-     * @param owner The intermediary name of the method's owning class
      * @param name The intermediary name of the method
      * @param desc The type descriptor of the method
      */
-    public static MethodRef intermediary(String owner, String name, String desc) {
-        String methodName = ObfuscationReflectionHelper.remapName(INameMappingService.Domain.METHOD, name);
+    public static MethodRef intermediary(String name, String desc) {
+        String methodName = NameUtil.deobfName(INameMappingService.Domain.METHOD, name);
 
         return new MethodRef(methodName, desc);
     }

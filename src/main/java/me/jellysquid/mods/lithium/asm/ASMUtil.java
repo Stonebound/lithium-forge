@@ -1,5 +1,7 @@
 package me.jellysquid.mods.lithium.asm;
 
+import cpw.mods.modlauncher.api.INameMappingService;
+import net.minecraftforge.fml.loading.FMLLoader;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -22,6 +24,7 @@ public class ASMUtil {
         return matchRefs(classNode.methods, refs,
                 (method) -> new MethodRef(method.name, method.desc));
     }
+
 
     /**
      * Converts a dot-delimited intermediary name to a forward slash-delimited path notation.
