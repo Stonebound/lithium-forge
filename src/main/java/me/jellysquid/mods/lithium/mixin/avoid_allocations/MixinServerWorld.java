@@ -1,7 +1,11 @@
 package me.jellysquid.mods.lithium.mixin.avoid_allocations;
 
 import me.jellysquid.mods.lithium.common.world.ExtendedWorld;
+import net.minecraft.block.BlockState;
+import net.minecraft.fluid.FluidState;
+import net.minecraft.fluid.IFluidState;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -26,7 +30,7 @@ public abstract class MixinServerWorld {
     /**
      * @reason Ensure an immutable block position is passed on block tick
      */
-    @Redirect(method = "tickChunk", at = @At(value = "INVOKE", target = "Lnet/minecraft/block/BlockState;randomTick(Lnet/minecraft/server/world/ServerWorld;Lnet/minecraft/util/math/BlockPos;Ljava/util/Random;)V"))
+    @Redirect(method = "tickEnvironment", at = @At(value = "INVOKE", target = "Lnet/minecraft/block/BlockState;randomTick(Lnet/minecraft/world/server/ServerWorld;Lnet/minecraft/util/math/BlockPos;Ljava/util/Random;)V"))
     private void redirectBlockStateTick(BlockState blockState, ServerWorld world, BlockPos pos, Random rand) {
         blockState.randomTick(world, pos.toImmutable(), rand);
     }
@@ -34,8 +38,8 @@ public abstract class MixinServerWorld {
     /**
      * @reason Ensure an immutable block position is passed on fluid tick
      */
-    @Redirect(method = "tickChunk", at = @At(value = "INVOKE", target = "Lnet/minecraft/fluid/FluidState;onRandomTick(Lnet/minecraft/world/World;Lnet/minecraft/util/math/BlockPos;Ljava/util/Random;)V"))
-    private void redirectFluidStateTick(FluidState fluidState, World world, BlockPos pos, Random rand) {
-        fluidState.onRandomTick(world, pos.toImmutable(), rand);
+    @Redirect(method = "tickEnvironment", at = @At(value = "INVOKE", target = "Lnet/minecraft/fluid/IFluidState;randomTick(Lnet/minecraft/world/World;Lnet/minecraft/util/math/BlockPos;Ljava/util/Random;)V"))
+    private void redirectFluidStateTick(IFluidState fluidState, World world, BlockPos pos, Random rand) {
+        fluidState.randomTick(world, pos.toImmutable(), rand);
     }
 }

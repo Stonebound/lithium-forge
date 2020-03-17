@@ -7,6 +7,7 @@ import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import me.jellysquid.mods.lithium.common.poi.IExtendedRegionSectionCache;
 import me.jellysquid.mods.lithium.common.util.Collector;
 import me.jellysquid.mods.lithium.common.util.ListeningLong2ObjectOpenHashMap;
+import net.minecraft.util.IDynamicSerializable;
 import net.minecraft.util.datafix.DefaultTypeReferences;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.SectionPos;
@@ -29,17 +30,14 @@ import java.util.stream.Stream;
 
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType") // We don't get a choice, this is Minecraft's doing!
 @Mixin(RegionSectionCache.class)
-public class MixinRegionSectionCache<R extends DynamicSerializable> implements IExtendedRegionSectionCache<R> {
+public abstract class MixinRegionSectionCache<R extends IDynamicSerializable> implements IExtendedRegionSectionCache<R> {
     @Mutable
     @Shadow
     @Final
     private Long2ObjectMap<Optional<R>> data;
 
     @Shadow
-    protected abstract R getOrCreate(long pos);
-
-    @Shadow
-    protected abstract Optional<R> get(long pos);
+    protected abstract R func_219110_e(long pos);
 
     private Long2ObjectOpenHashMap<BitSet> columns;
 
@@ -113,7 +111,7 @@ public class MixinRegionSectionCache<R extends DynamicSerializable> implements I
     }
 
     private BitSet getCachedColumnInfo(int chunkX, int chunkZ) {
-        long pos = ChunkPos.toLong(chunkX, chunkZ);
+        long pos = ChunkPos.asLong(chunkX, chunkZ);
 
         BitSet flags = this.getColumnInfo(pos, false);
 
@@ -121,7 +119,7 @@ public class MixinRegionSectionCache<R extends DynamicSerializable> implements I
             return flags;
         }
 
-        this.getOrCreate(pos);
+        this.func_219110_e(pos);
 
         return this.getColumnInfo(pos, true);
     }
