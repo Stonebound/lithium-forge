@@ -22,8 +22,6 @@ public class LithiumPaletteHashMap<T> implements IPalette<T> {
     private final Function<CompoundNBT, T> elementDeserializer;
     private final Function<T, CompoundNBT> elementSerializer;
     private final int indexBits;
-    private T prevObj;
-    private int prevKey;
 
     public LithiumPaletteHashMap(ObjectIntIdentityMap<T> ids, int bits, LithiumResizeCallback<T> resizeHandler, Function<CompoundNBT, T> deserializer, Function<T, CompoundNBT> serializer) {
         this.idList = ids;
@@ -36,10 +34,6 @@ public class LithiumPaletteHashMap<T> implements IPalette<T> {
 
     @Override
     public int idFor(T obj) {
-        if (this.prevObj == obj) {
-            return this.prevKey;
-        }
-
         int id = this.map.getId(obj);
 
         if (id == -1) {
@@ -53,9 +47,6 @@ public class LithiumPaletteHashMap<T> implements IPalette<T> {
                 }
             }
         }
-
-        this.prevObj = obj;
-        this.prevKey = id;
 
         return id;
     }
