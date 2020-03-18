@@ -74,7 +74,7 @@ public abstract class MixinPointOfInterestManager extends RegionSectionCache<Poi
         for (PointOfInterest point : points) {
             double distance = point.getPos().distanceSq(pos);
 
-            if (nearest == null || distance < nearestDistance) {
+            if (distance < nearestDistance) {
                 if (posPredicate.test(point.getPos())) {
                     nearest = point.getPos();
                     nearestDistance = distance;
