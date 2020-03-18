@@ -37,7 +37,7 @@ public abstract class MixinRegionSectionCache<R extends IDynamicSerializable> im
     private Long2ObjectMap<Optional<R>> data;
 
     @Shadow
-    protected abstract R func_219110_e(long pos);
+    protected abstract void func_219107_b(ChunkPos pos);
 
     private Long2ObjectOpenHashMap<BitSet> columns;
 
@@ -119,7 +119,7 @@ public abstract class MixinRegionSectionCache<R extends IDynamicSerializable> im
             return flags;
         }
 
-        this.func_219110_e(pos);
+        this.func_219107_b(new ChunkPos(pos));
 
         return this.getColumnInfo(pos, true);
     }
