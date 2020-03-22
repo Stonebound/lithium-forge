@@ -122,7 +122,7 @@ public class EntityTrackerEngine {
         MutableBoundingBox merged = new MutableBoundingBox(before);
         merged.expandTo(after);
 
-        BlockPos.Mutable pos = new BlockPos.Mutable();
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
 
         for (int x = merged.minX; x <= merged.maxX; x++) {
             for (int y = merged.minY; y <= merged.maxY; y++) {

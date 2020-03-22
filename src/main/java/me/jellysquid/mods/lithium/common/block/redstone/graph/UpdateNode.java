@@ -203,7 +203,7 @@ public class UpdateNode {
         if (this.state.getBlock() == Blocks.REDSTONE_WIRE) {
             this.type = UpdateNodeBlockType.WIRE;
             this.currentWirePower = this.state.get(RedstoneWireBlock.POWER).byteValue();
-        } else if (this.state.isCollisionShapeOpaque(this.getWorld(), this.getPosition())) {
+        } else if (this.state.isNormalCube(this.getWorld(), this.getPosition())) {
             this.type = UpdateNodeBlockType.FULL_BLOCK;
             this.currentWirePower = 0;
         } else {
@@ -259,7 +259,7 @@ public class UpdateNode {
         BlockState state = this.getBlockState();
         BlockPos pos = this.getPosition();
 
-        return state.isSolidSide(world, pos, Direction.UP) || state.getBlock() == Blocks.HOPPER;
+        return state.func_224755_d(world, pos, Direction.UP) || state.getBlock() == Blocks.HOPPER;
     }
 
     /**

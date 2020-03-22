@@ -16,7 +16,7 @@ public class MixinWorld implements ExtendedWorld {
      * {@inheritDoc}
      */
     @Override
-    public void getRandomPosInChunk(int x, int y, int z, int mask, BlockPos.Mutable out) {
+    public void getRandomPosInChunk(int x, int y, int z, int mask, BlockPos.MutableBlockPos out) {
         this.updateLCG = this.updateLCG * 3 + 1013904223;
         int rand = this.updateLCG >> 2;
         out.setPos(x + (rand & 15), y + (rand >> 16 & mask), z + (rand >> 8 & 15));

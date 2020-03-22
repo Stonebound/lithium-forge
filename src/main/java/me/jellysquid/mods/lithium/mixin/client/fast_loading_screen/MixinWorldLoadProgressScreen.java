@@ -1,7 +1,6 @@
 package me.jellysquid.mods.lithium.mixin.client.fast_loading_screen;
 
 import com.mojang.blaze3d.platform.GlStateManager;
-import com.mojang.blaze3d.systems.RenderSystem;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import me.jellysquid.mods.lithium.common.util.math.Color4;
 import net.minecraft.client.gui.screen.WorldLoadProgressScreen;
@@ -41,7 +40,7 @@ public class MixinWorldLoadProgressScreen {
      * @author JellySquid
      */
     @Overwrite
-    public static void drawProgress(TrackingChunkStatusListener tracker, int mapX, int mapY, int mapScale, int mapPadding) {
+    public static void func_213038_a(TrackingChunkStatusListener tracker, int mapX, int mapY, int mapScale, int mapPadding) {
         if (COLORS_FAST == null) {
             COLORS_FAST = new IdentityHashMap<>(COLORS.size());
             COLORS_FAST.put(null, NULL_STATUS_COLOR);
@@ -51,9 +50,9 @@ public class MixinWorldLoadProgressScreen {
 
         Tessellator tessellator = Tessellator.getInstance();
 
-        RenderSystem.enableBlend();
-        RenderSystem.disableTexture();
-        RenderSystem.defaultBlendFunc();
+        GlStateManager.enableBlend();
+        GlStateManager.disableTexture();
+        GlStateManager.blendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
 
         BufferBuilder buffer = Tessellator.getInstance().getBuffer();
         buffer.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
@@ -86,7 +85,7 @@ public class MixinWorldLoadProgressScreen {
             for (int z = 0; z < size; ++z) {
                 int tileY = mapStartY + z * tileSize;
 
-                ChunkStatus status = tracker.getStatus(x, z);
+                ChunkStatus status = tracker.func_219525_a(x, z);
                 Color4 color;
 
                 if (prevStatus == status) {

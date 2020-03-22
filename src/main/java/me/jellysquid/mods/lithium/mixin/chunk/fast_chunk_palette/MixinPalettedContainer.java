@@ -6,9 +6,9 @@ import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.util.BitArray;
 import net.minecraft.util.ObjectIntIdentityMap;
 import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.palette.IPalette;
-import net.minecraft.util.palette.PaletteArray;
-import net.minecraft.util.palette.PalettedContainer;
+import net.minecraft.world.chunk.BlockStateContainer;
+import net.minecraft.world.chunk.IBlockStatePalette;
+import net.minecraft.world.chunk.BlockStatePaletteLinear;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
@@ -17,12 +17,12 @@ import org.spongepowered.asm.mixin.Shadow;
 import java.util.function.Function;
 
 /**
- * Patches {@link PalettedContainer} to make use of {@link LithiumPaletteHashMap}.
+ * Patches {@link BlockStateContainer} to make use of {@link LithiumPaletteHashMap}.
  */
-@Mixin(value = PalettedContainer.class, priority = 999)
+@Mixin(value = BlockStateContainer.class, priority = 999)
 public abstract class MixinPalettedContainer<T> implements LithiumResizeCallback<T> {
     @Shadow
-    private IPalette<T> palette;
+    private IBlockStatePalette<T> palette;
 
     @Shadow
     protected BitArray storage;
@@ -50,7 +50,7 @@ public abstract class MixinPalettedContainer<T> implements LithiumResizeCallback
 
     @Shadow
     @Final
-    private IPalette<T> registryPalette;
+    private IBlockStatePalette<T> registryPalette;
 
     @Shadow
     @Final
@@ -75,7 +75,7 @@ public abstract class MixinPalettedContainer<T> implements LithiumResizeCallback
 
         if (size > this.bits) {
             BitArray oldData = this.storage;
-            IPalette<T> oldPalette = this.palette;
+            IBlockStatePalette<T> oldPalette = this.palette;
 
             this.setBits(size);
 
@@ -109,7 +109,7 @@ public abstract class MixinPalettedContainer<T> implements LithiumResizeCallback
             this.bits = size;
             if (this.bits <= 2) {
                 this.bits = 2;
-                this.palette = new PaletteArray<>(this.registry, this.bits, (PalettedContainer<T>) (Object) this, this.deserializer);
+                this.palette = new BlockStatePaletteLinear<>(this.registry, this.bits, (BlockStateContainer<T>) (Object) this, this.deserializer);
             } else if (this.bits <= 8) {
                 this.palette = new LithiumPaletteHashMap<>(this.registry, this.bits, this, this.deserializer, this.serializer);
             } else {

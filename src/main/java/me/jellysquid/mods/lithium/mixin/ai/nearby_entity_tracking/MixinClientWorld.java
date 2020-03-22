@@ -19,15 +19,15 @@ public class MixinClientWorld {
     /**
      * Notify the entity tracker when an entity moves and enters a new chunk.
      */
-    @Inject(method = "checkChunk", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/chunk/Chunk;addEntity(Lnet/minecraft/entity/Entity;)V", shift = At.Shift.BEFORE))
+    @Inject(method = "func_217423_b", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/chunk/Chunk;addEntity(Lnet/minecraft/entity/Entity;)V", shift = At.Shift.BEFORE))
     private void onEntityMoveAdd(Entity entity, CallbackInfo ci) {
         if (!(entity instanceof LivingEntity)) {
             return;
         }
 
-        int x = MathHelper.floor(entity.getPosX()) >> 4;
-        int y = MathHelper.floor(entity.getPosY()) >> 4;
-        int z = MathHelper.floor(entity.getPosZ()) >> 4;
+        int x = MathHelper.floor(entity.posX) >> 4;
+        int y = MathHelper.floor(entity.posY) >> 4;
+        int z = MathHelper.floor(entity.posZ) >> 4;
 
         EntityTrackerEngine tracker = WorldWithEntityTrackerEngine.getEntityTracker(this);
         tracker.onEntityAdded(x, y, z, (LivingEntity) entity);
@@ -37,7 +37,7 @@ public class MixinClientWorld {
     /**
      * Notify the entity tracker when an entity moves and is removed from the previous chunk.
      */
-    @Inject(method = "checkChunk", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/chunk/Chunk;removeEntityAtIndex(Lnet/minecraft/entity/Entity;I)V", shift = At.Shift.BEFORE))
+    @Inject(method = "func_217423_b", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/chunk/Chunk;removeEntityAtIndex(Lnet/minecraft/entity/Entity;I)V", shift = At.Shift.BEFORE))
     private void onEntityMoveRemove(Entity entity, CallbackInfo ci) {
         if (!(entity instanceof LivingEntity)) {
             return;
@@ -57,9 +57,9 @@ public class MixinClientWorld {
             return;
         }
 
-        int chunkX = MathHelper.floor(entity.getPosX()) >> 4;
-        int chunkY = MathHelper.floor(entity.getPosY()) >> 4;
-        int chunkZ = MathHelper.floor(entity.getPosZ()) >> 4;
+        int chunkX = MathHelper.floor(entity.posX) >> 4;
+        int chunkY = MathHelper.floor(entity.posY) >> 4;
+        int chunkZ = MathHelper.floor(entity.posZ) >> 4;
 
         EntityTrackerEngine tracker = WorldWithEntityTrackerEngine.getEntityTracker(this);
         tracker.onEntityAdded(chunkX, chunkY, chunkZ, (LivingEntity) entity);
@@ -74,9 +74,9 @@ public class MixinClientWorld {
             return;
         }
 
-        int chunkX = MathHelper.floor(entity.getPosX()) >> 4;
-        int chunkY = MathHelper.floor(entity.getPosY()) >> 4;
-        int chunkZ = MathHelper.floor(entity.getPosZ()) >> 4;
+        int chunkX = MathHelper.floor(entity.posX) >> 4;
+        int chunkY = MathHelper.floor(entity.posY) >> 4;
+        int chunkZ = MathHelper.floor(entity.posZ) >> 4;
 
         EntityTrackerEngine tracker = WorldWithEntityTrackerEngine.getEntityTracker(this);
         tracker.onEntityRemoved(chunkX, chunkY, chunkZ, (LivingEntity) entity);

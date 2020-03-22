@@ -20,7 +20,7 @@ public class MixinRunType {
         public <E extends LivingEntity> void func_220630_a(WeightedList<Task<? super E>> tasks, ServerWorld world, E entity, long time) {
             for (Task<? super E> task : IIterableWeightedList.cast(tasks)) {
                 if (task.getStatus() == Task.Status.STOPPED) {
-                    if (task.start(world, entity, time)) {
+                    if (task.func_220378_b(world, entity, time)) {
                         break;
                     }
                 }
@@ -38,7 +38,7 @@ public class MixinRunType {
         public <E extends LivingEntity> void func_220630_a(WeightedList<Task<? super E>> tasks, ServerWorld world, E entity, long time) {
             for (Task<? super E> task : IIterableWeightedList.cast(tasks)) {
                 if (task.getStatus() == Task.Status.STOPPED) {
-                    task.start(world, entity, time);
+                    task.func_220378_b(world, entity, time);
                 }
             }
         }

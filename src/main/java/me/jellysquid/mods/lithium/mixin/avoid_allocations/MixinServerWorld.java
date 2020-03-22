@@ -15,7 +15,7 @@ import java.util.Random;
 
 @Mixin(ServerWorld.class)
 public abstract class MixinServerWorld {
-    private final BlockPos.Mutable randomPosInChunkCachedPos = new BlockPos.Mutable();
+    private final BlockPos.MutableBlockPos randomPosInChunkCachedPos = new BlockPos.MutableBlockPos();
 
     /**
      * @reason Avoid allocating BlockPos every invocation through using our allocation-free variant
@@ -30,9 +30,9 @@ public abstract class MixinServerWorld {
     /**
      * @reason Ensure an immutable block position is passed on block tick
      */
-    @Redirect(method = "tickEnvironment", at = @At(value = "INVOKE", target = "Lnet/minecraft/block/BlockState;randomTick(Lnet/minecraft/world/server/ServerWorld;Lnet/minecraft/util/math/BlockPos;Ljava/util/Random;)V"))
-    private void redirectBlockStateTick(BlockState blockState, ServerWorld world, BlockPos pos, Random rand) {
-        blockState.randomTick(world, pos.toImmutable(), rand);
+    @Redirect(method = "tickEnvironment", at = @At(value = "INVOKE", target = "Lnet/minecraft/block/BlockState;randomTick(Lnet/minecraft/world/World;Lnet/minecraft/util/math/BlockPos;Ljava/util/Random;)V"))
+    private void redirectBlockStateTick(BlockState state, World world, BlockPos pos, Random rand) {
+        state.randomTick(world, pos.toImmutable(), rand);
     }
 
     /**

@@ -2,7 +2,7 @@ package me.jellysquid.mods.lithium.mixin.chunk.fast_chunk_serialization;
 
 import me.jellysquid.mods.lithium.common.world.chunk.CompactingBitArray;
 import net.minecraft.util.BitArray;
-import net.minecraft.util.palette.IPalette;
+import net.minecraft.world.chunk.IBlockStatePalette;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -29,7 +29,7 @@ public class MixinBitArray implements CompactingBitArray {
     private long maxEntryValue;
 
     @Override
-    public <T> short[] compact(IPalette<T> srcPalette, IPalette<T> destPalette, T def) {
+    public <T> short[] compact(IBlockStatePalette<T> srcPalette, IBlockStatePalette<T> destPalette, T def) {
         if (this.arraySize >= Short.MAX_VALUE) {
             throw new IllegalStateException("Array too large");
         }

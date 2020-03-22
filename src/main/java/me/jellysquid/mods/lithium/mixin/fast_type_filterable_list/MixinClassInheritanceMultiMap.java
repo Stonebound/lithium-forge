@@ -32,7 +32,7 @@ public class MixinClassInheritanceMultiMap<T> {
      */
     @SuppressWarnings("unchecked")
     @Overwrite
-    public <S> Collection<S> getByClass(Class<S> type) {
+    public <S> Collection<S> func_219790_a(Class<S> type) {
         Collection<T> collection = this.map.get(type);
 
         if (collection == null) {

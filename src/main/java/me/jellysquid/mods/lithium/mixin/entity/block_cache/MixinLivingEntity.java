@@ -39,9 +39,9 @@ public abstract class MixinLivingEntity extends Entity {
      */
     @Overwrite
     public BlockState getBlockState() {
-        int x = MathHelper.floor(this.getPosX());
-        int y = MathHelper.floor(this.getPosY());
-        int z = MathHelper.floor(this.getPosZ());
+        int x = MathHelper.floor(this.posX);
+        int y = MathHelper.floor(this.posY);
+        int z = MathHelper.floor(this.posZ);
 
         long pos = BlockPos.pack(x, y, z);
 

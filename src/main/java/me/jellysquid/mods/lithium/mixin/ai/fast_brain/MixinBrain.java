@@ -61,9 +61,9 @@ public abstract class MixinBrain<E extends LivingEntity> {
      * @author JellySquid
      */
     @Overwrite
-    private void updateSensors(ServerWorld world, E entity) {
+    private void func_218229_c(ServerWorld world, E entity) {
         for (Sensor<? super E> sensor : this.sensors.values()) {
-            sensor.tick(world, entity);
+            sensor.func_220973_b(world, entity);
         }
     }
 
@@ -72,7 +72,7 @@ public abstract class MixinBrain<E extends LivingEntity> {
      * @author JellySquid
      */
     @Overwrite
-    private void startTasks(ServerWorld world, E entity) {
+    private void func_218218_d(ServerWorld world, E entity) {
         long time = world.getGameTime();
 
         for (Pair<Activity, List<Task<? super E>>> pair : this.allTasks) {
@@ -82,7 +82,7 @@ public abstract class MixinBrain<E extends LivingEntity> {
 
             for (Task<? super E> task : pair.getSecond()) {
                 if (task.getStatus() == Task.Status.STOPPED) {
-                    task.start(world, entity, time);
+                    task.func_220378_b(world, entity, time);
                 }
             }
         }
@@ -93,13 +93,13 @@ public abstract class MixinBrain<E extends LivingEntity> {
      * @author JellySquid
      */
     @Overwrite
-    private void tickTasks(ServerWorld world, E entity) {
+    private void func_218222_e(ServerWorld world, E entity) {
         long time = world.getGameTime();
 
         for (Pair<Activity, List<Task<? super E>>> pair : this.allTasks) {
             for (Task<? super E> task : pair.getSecond()) {
                 if (task.getStatus() == Task.Status.RUNNING) {
-                    task.tick(world, entity, time);
+                    task.func_220377_c(world, entity, time);
                 }
             }
         }

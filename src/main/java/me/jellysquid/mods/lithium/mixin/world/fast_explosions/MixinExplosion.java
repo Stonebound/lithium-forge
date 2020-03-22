@@ -70,7 +70,7 @@ public abstract class MixinExplosion {
     private Map<PlayerEntity, Vec3d> playerKnockbackMap;
 
     // The cached mutable block position used during block traversal.
-    private final BlockPos.Mutable cachedPos = new BlockPos.Mutable();
+    private final BlockPos.MutableBlockPos cachedPos = new BlockPos.MutableBlockPos();
 
     // The chunk coordinate of the most recently stepped through block.
     private int prevChunkX = Integer.MIN_VALUE;
@@ -291,9 +291,9 @@ public abstract class MixinExplosion {
                 continue;
             }
 
-            double distXSq = entity.getPosX() - this.x;
-            double distYSq = entity.getPosYEye() - this.y;
-            double distZSq = entity.getPosZ() - this.z;
+            double distXSq = entity.posX - this.x;
+            double distYSq = (entity.posY + entity.getEyeHeight()) - this.y;
+            double distZSq = entity.posZ - this.z;
 
             double dist = MathHelper.sqrt((distXSq * distXSq) + (distYSq * distYSq) + (distZSq * distZSq));
 

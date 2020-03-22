@@ -8,6 +8,7 @@ import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.MethodNode;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Objects;
 import java.util.function.Consumer;
 
@@ -36,7 +37,11 @@ public class FieldRemapper implements Consumer<ClassNode> {
     private int patchMethod(MethodNode method) {
         int count = 0;
 
-        for (AbstractInsnNode insnNode : method.instructions) {
+        Iterator<AbstractInsnNode> it = method.instructions.iterator();
+
+        while (it.hasNext()) {
+            AbstractInsnNode insnNode = it.next();
+            
             if (!(insnNode instanceof FieldInsnNode)) {
                 continue;
             }

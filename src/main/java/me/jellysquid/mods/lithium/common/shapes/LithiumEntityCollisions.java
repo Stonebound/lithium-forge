@@ -11,10 +11,10 @@ import net.minecraft.util.math.shapes.IBooleanFunction;
 import net.minecraft.util.math.shapes.ISelectionContext;
 import net.minecraft.util.math.shapes.VoxelShape;
 import net.minecraft.util.math.shapes.VoxelShapes;
-import net.minecraft.world.IBlockReader;
-import net.minecraft.world.ICollisionReader;
 import net.minecraft.world.IEntityReader;
+import net.minecraft.world.IWorldReader;
 import net.minecraft.world.border.WorldBorder;
+import net.minecraft.world.chunk.IChunk;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -28,7 +28,7 @@ public class LithiumEntityCollisions {
      * Checks against the world border are replaced with our own optimized functions which do not go through the
      * VoxelShape system.
      */
-    public static Stream<VoxelShape> getBlockCollisions(ICollisionReader world, final Entity entity, AxisAlignedBB entityBox) {
+    public static Stream<VoxelShape> getBlockCollisions(IWorldReader world, final Entity entity, AxisAlignedBB entityBox) {
         int minX = MathHelper.floor(entityBox.minX - 1.0E-7D) - 1;
         int maxX = MathHelper.floor(entityBox.maxX + 1.0E-7D) + 1;
         int minY = MathHelper.floor(entityBox.minY - 1.0E-7D) - 1;
@@ -38,7 +38,7 @@ public class LithiumEntityCollisions {
 
         final ISelectionContext context = entity == null ? ISelectionContext.dummy() : ISelectionContext.forEntity(entity);
         final CubeCoordinateIterator cuboidIt = new CubeCoordinateIterator(minX, minY, minZ, maxX, maxY, maxZ);
-        final BlockPos.Mutable pos = new BlockPos.Mutable();
+        final BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
         final VoxelShape entityShape = VoxelShapes.create(entityBox);
 
         return StreamSupport.stream(new Spliterators.AbstractSpliterator<VoxelShape>(Long.MAX_VALUE, Spliterator.NONNULL | Spliterator.IMMUTABLE) {
@@ -71,7 +71,7 @@ public class LithiumEntityCollisions {
                         continue;
                     }
 
-                    IBlockReader chunk = world.getBlockReader(x >> 4, z >> 4);
+                    IChunk chunk = world.getChunk(x >> 4, z >> 4);
 
                     if (chunk == null) {
                         continue;

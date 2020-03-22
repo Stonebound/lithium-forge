@@ -4,18 +4,18 @@ import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.ListNBT;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.util.ObjectIntIdentityMap;
-import net.minecraft.util.palette.IPalette;
-import net.minecraft.util.palette.PaletteHashMap;
+import net.minecraft.world.chunk.IBlockStatePalette;
+import net.minecraft.world.chunk.BlockStatePaletteHashMap;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 import java.util.function.Function;
 
 /**
- * Generally provides better performance over the vanilla {@link PaletteHashMap} when calling
+ * Generally provides better performance over the vanilla {@link BlockStatePaletteHashMap} when calling
  * {@link LithiumPaletteHashMap#idFor(Object)} through using a faster backing map.
  */
-public class LithiumPaletteHashMap<T> implements IPalette<T> {
+public class LithiumPaletteHashMap<T> implements IBlockStatePalette<T> {
     private final ObjectIntIdentityMap<T> idList;
     private final LithiumIntIdentityHashBiMap<T> map;
     private final LithiumResizeCallback<T> resizeHandler;

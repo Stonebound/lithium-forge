@@ -25,9 +25,9 @@ public class MixinServerWorld {
             return;
         }
 
-        int x = MathHelper.floor(entity.getPosX()) >> 4;
-        int y = MathHelper.floor(entity.getPosY()) >> 4;
-        int z = MathHelper.floor(entity.getPosZ()) >> 4;
+        int x = MathHelper.floor(entity.posX) >> 4;
+        int y = MathHelper.floor(entity.posY) >> 4;
+        int z = MathHelper.floor(entity.posZ) >> 4;
 
         EntityTrackerEngine tracker = WorldWithEntityTrackerEngine.getEntityTracker(this);
         tracker.onEntityAdded(x, y, z, (LivingEntity) entity);
@@ -56,9 +56,9 @@ public class MixinServerWorld {
             return;
         }
 
-        int chunkX = MathHelper.floor(entity.getPosX()) >> 4;
-        int chunkY = MathHelper.floor(entity.getPosY()) >> 4;
-        int chunkZ = MathHelper.floor(entity.getPosZ()) >> 4;
+        int chunkX = MathHelper.floor(entity.posX) >> 4;
+        int chunkY = MathHelper.floor(entity.posY) >> 4;
+        int chunkZ = MathHelper.floor(entity.posZ) >> 4;
 
         EntityTrackerEngine tracker = WorldWithEntityTrackerEngine.getEntityTracker(this);
         tracker.onEntityAdded(chunkX, chunkY, chunkZ, (LivingEntity) entity);
@@ -73,9 +73,9 @@ public class MixinServerWorld {
             return;
         }
 
-        int chunkX = MathHelper.floor(entity.getPosX()) >> 4;
-        int chunkY = MathHelper.floor(entity.getPosY()) >> 4;
-        int chunkZ = MathHelper.floor(entity.getPosZ()) >> 4;
+        int chunkX = MathHelper.floor(entity.posX) >> 4;
+        int chunkY = MathHelper.floor(entity.posY) >> 4;
+        int chunkZ = MathHelper.floor(entity.posZ) >> 4;
 
         EntityTrackerEngine tracker = WorldWithEntityTrackerEngine.getEntityTracker(this);
         tracker.onEntityRemoved(chunkX, chunkY, chunkZ, (LivingEntity) entity);

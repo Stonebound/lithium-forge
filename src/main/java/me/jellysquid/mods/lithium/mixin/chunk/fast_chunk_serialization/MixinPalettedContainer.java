@@ -7,10 +7,9 @@ import net.minecraft.nbt.ListNBT;
 import net.minecraft.util.BitArray;
 import net.minecraft.util.ObjectIntIdentityMap;
 import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.palette.PaletteArray;
-import net.minecraft.util.palette.PalettedContainer;
-import net.minecraft.util.palette.PaletteHashMap;
-import net.minecraft.util.palette.IPalette;
+import net.minecraft.world.chunk.*;
+import net.minecraft.world.chunk.BlockStateContainer;
+import net.minecraft.world.chunk.BlockStatePaletteLinear;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -21,10 +20,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.util.function.Function;
 
 /**
- * Makes a number of patches to {@link PalettedContainer} to improve the performance of chunk serialization. While I/O
+ * Makes a number of patches to {@link BlockStateContainer} to improve the performance of chunk serialization. While I/O
  * operations in Minecraft 1.15+ are handled off-thread, NBT serialization is not and happens on the main server thread.
  */
-@Mixin(PalettedContainer.class)
+@Mixin(BlockStateContainer.class)
 public abstract class MixinPalettedContainer<T> {
     @Shadow
     public abstract void lock();
@@ -58,7 +57,7 @@ public abstract class MixinPalettedContainer<T> {
     protected BitArray storage;
 
     @Shadow
-    private IPalette<T> palette;
+    private IBlockStatePalette<T> palette;
 
     /**
      * This patch incorporates a number of changes to significantly reduce the time needed to serialize.
@@ -128,8 +127,8 @@ public abstract class MixinPalettedContainer<T> {
      *
      * @author JellySquid
      */
-    @Inject(method = "count", at = @At("HEAD"), cancellable = true)
-    public void count(PalettedContainer.ICountConsumer<T> consumer, CallbackInfo ci) {
+    @Inject(method = "func_225497_a", at = @At("HEAD"), cancellable = true)
+    public void count(BlockStateContainer.ICountConsumer<T> consumer, CallbackInfo ci) {
         int size = getPaletteSize(this.palette);
 
         // We don't know how many items are in the palette, so this optimization cannot be done
@@ -139,7 +138,7 @@ public abstract class MixinPalettedContainer<T> {
 
         int[] counts = new int[size];
 
-        this.storage.getAll(i -> counts[i]++);
+        this.storage.func_225421_a(i -> counts[i]++);
 
         for (int i = 0; i < counts.length; i++) {
             consumer.accept(this.palette.get(i), counts[i]);
@@ -151,13 +150,13 @@ public abstract class MixinPalettedContainer<T> {
     /**
      * Try to determine the number of elements in a palette, otherwise return -1 to indicate that it is unknown.
      */
-    private static int getPaletteSize(IPalette<?> palette) {
-        if (palette instanceof PaletteHashMap<?>) {
-            return ((PaletteHashMap<?>) palette).getPaletteSize();
+    private static int getPaletteSize(IBlockStatePalette<?> palette) {
+        if (palette instanceof BlockStatePaletteHashMap<?>) {
+            return ((BlockStatePaletteHashMap<?>) palette).getPaletteSize();
         } else if (palette instanceof LithiumPaletteHashMap<?>) {
             return ((LithiumPaletteHashMap<?>) palette).getSize();
-        } else if (palette instanceof PaletteArray<?>) {
-            return ((PaletteArray<?>) palette).getPaletteSize();
+        } else if (palette instanceof BlockStatePaletteLinear<?>) {
+            return ((BlockStatePaletteLinear<?>) palette).func_202137_b();
         }
 
         return -1;

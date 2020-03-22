@@ -1,6 +1,6 @@
 package me.jellysquid.mods.lithium.mixin.ai.fast_raids;
 
-import net.minecraft.world.server.ServerBossInfo;
+import net.minecraft.world.ServerBossInfo;
 import net.minecraft.world.raid.Raid;
 import net.minecraft.util.math.MathHelper;
 import org.spongepowered.asm.mixin.Final;

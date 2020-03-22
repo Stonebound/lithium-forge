@@ -6,7 +6,7 @@ import net.minecraft.crash.CrashReportCategory;
 import net.minecraft.crash.ReportedException;
 import net.minecraft.world.server.ServerChunkProvider;
 import net.minecraft.world.NextTickListEntry;
-import net.minecraft.world.server.ServerTickList;
+import net.minecraft.world.ServerTickList;
 import net.minecraft.world.server.ServerWorld;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.crash.CrashReport;

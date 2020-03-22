@@ -48,7 +48,7 @@ public abstract class MixinVoxelShapes {
      * @author JellySquid
      */
     @Overwrite
-    public static boolean faceShapeCovers(VoxelShape a, VoxelShape b) {
+    public static boolean func_223416_b(VoxelShape a, VoxelShape b) {
         // At least one shape is a full cube and will match
         if (a == VoxelShapes.fullCube() || b == VoxelShapes.fullCube()) {
             return true;

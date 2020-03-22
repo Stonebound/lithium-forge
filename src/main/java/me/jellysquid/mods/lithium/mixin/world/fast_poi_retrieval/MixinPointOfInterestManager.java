@@ -65,7 +65,7 @@ public abstract class MixinPointOfInterestManager extends RegionSectionCache<Poi
      * @author JellySquid
      */
     @Overwrite
-    public Optional<BlockPos> find(Predicate<PointOfInterestType> pointPredicate, Predicate<BlockPos> posPredicate, BlockPos pos, int radius, PointOfInterestManager.Status status) {
+    public Optional<BlockPos> func_219147_b(Predicate<PointOfInterestType> pointPredicate, Predicate<BlockPos> posPredicate, BlockPos pos, int radius, PointOfInterestManager.Status status) {
         List<PointOfInterest> points = this.getAllWithinCircle(pointPredicate, pos, radius, status);
 
         BlockPos nearest = null;
@@ -90,7 +90,7 @@ public abstract class MixinPointOfInterestManager extends RegionSectionCache<Poi
      * @author JellySquid
      */
     @Overwrite
-    public long getCountInRange(Predicate<PointOfInterestType> predicate, BlockPos pos, int radius, PointOfInterestManager.Status status) {
+    public long func_219145_a(Predicate<PointOfInterestType> predicate, BlockPos pos, int radius, PointOfInterestManager.Status status) {
         return this.getAllWithinCircle(predicate, pos, radius, status).size();
     }
 
