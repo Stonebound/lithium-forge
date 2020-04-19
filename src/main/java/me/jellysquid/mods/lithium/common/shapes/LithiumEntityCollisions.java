@@ -71,7 +71,7 @@ public class LithiumEntityCollisions {
                         continue;
                     }
 
-                    IChunk chunk = world.getChunk(x >> 4, z >> 4);
+                    IChunk chunk = world.getChunk(x >> 4, z >> 4, world.getChunkStatus(), false);
 
                     if (chunk == null) {
                         continue;
