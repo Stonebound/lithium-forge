@@ -2,9 +2,12 @@ package me.jellysquid.mods.lithium.mixin.voxelshape.fast_shape_comparisons;
 
 import me.jellysquid.mods.lithium.common.shapes.VoxelShapeEmpty;
 import me.jellysquid.mods.lithium.common.shapes.VoxelShapeSimpleCube;
-import net.minecraft.util.math.shapes.*;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.shapes.BitSetVoxelShapePart;
+import net.minecraft.util.math.shapes.IBooleanFunction;
+import net.minecraft.util.math.shapes.VoxelShape;
+import net.minecraft.util.math.shapes.VoxelShapePart;
+import net.minecraft.util.math.shapes.VoxelShapes;
 import org.spongepowered.asm.mixin.*;
 
 /**

@@ -32,7 +32,7 @@ public class MixinMultiTask<E extends LivingEntity> {
      */
     @SuppressWarnings("unchecked")
     @Overwrite
-    public boolean func_212834_g_(ServerWorld world, E entity, long time) {
+    public boolean shouldContinueExecuting(ServerWorld world, E entity, long time) {
         for (Task<? super E> task : IIterableWeightedList.cast(this.field_220419_e)) {
             if (task.getStatus() == Task.Status.RUNNING) {
                 if (((ExtendedTask<? super E>) task).bridge$shouldContinueExecuting(world, entity, time)) {
@@ -49,10 +49,10 @@ public class MixinMultiTask<E extends LivingEntity> {
      * @author JellySquid
      */
     @Overwrite
-    public void func_212833_d_(ServerWorld world, E entity, long time) {
+    public void updateTask(ServerWorld world, E entity, long time) {
         for (Task<? super E> task : IIterableWeightedList.cast(this.field_220419_e)) {
             if (task.getStatus() == Task.Status.RUNNING) {
-                task.func_220377_c(world, entity, time);
+                task.tick(world, entity, time);
             }
         }
     }
@@ -62,10 +62,10 @@ public class MixinMultiTask<E extends LivingEntity> {
      * @author JellySquid
      */
     @Overwrite
-    public void func_212835_f_(ServerWorld world, E entity, long time) {
+    public void resetTask(ServerWorld world, E entity, long time) {
         for (Task<? super E> task : IIterableWeightedList.cast(this.field_220419_e)) {
             if (task.getStatus() == Task.Status.RUNNING) {
-                task.func_220380_e(world, entity, time);
+                task.stop(world, entity, time);
             }
         }
 

@@ -2,8 +2,12 @@ package me.jellysquid.mods.lithium.asm.patches;
 
 import me.jellysquid.mods.lithium.asm.FieldRef;
 import me.jellysquid.mods.lithium.asm.MethodRef;
-import me.jellysquid.mods.lithium.asm.consumers.*;
+import me.jellysquid.mods.lithium.asm.consumers.FieldAccessTransformer;
+import me.jellysquid.mods.lithium.asm.consumers.FieldCleaner;
+import me.jellysquid.mods.lithium.asm.consumers.FieldRemapper;
 import me.jellysquid.mods.lithium.asm.consumers.FieldRemapper.FieldMapping;
+import me.jellysquid.mods.lithium.asm.consumers.MethodCleaner;
+import me.jellysquid.mods.lithium.asm.consumers.PatchSetTransformer;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;
 

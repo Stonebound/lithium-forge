@@ -30,7 +30,7 @@ public class MixinTicket<T> {
      * @reason Initialize the object's hashcode and cache it
      */
     @Inject(method = "<init>", at = @At("RETURN"))
-    private void onConstructed(TicketType<T> type, int level, T argument, CallbackInfo ci) {
+    private void onConstructed(TicketType<T> type, int level, T argument, long p_i50700_4_, CallbackInfo ci) {
         int hash = 1;
         hash = 31 * hash + this.type.hashCode();
         hash = 31 * hash + this.level;

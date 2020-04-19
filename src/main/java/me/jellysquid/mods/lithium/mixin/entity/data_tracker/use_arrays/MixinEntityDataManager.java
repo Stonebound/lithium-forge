@@ -101,7 +101,7 @@ public abstract class MixinEntityDataManager {
         CrashReport report = CrashReport.makeCrashReport(cause, "Getting synced entity data");
 
         CrashReportCategory category = report.makeCategory("Synced entity data");
-        category.func_71507_a("Data ID", data);
+        category.addDetail("Data ID", data);
 
         return new ReportedException(report);
     }

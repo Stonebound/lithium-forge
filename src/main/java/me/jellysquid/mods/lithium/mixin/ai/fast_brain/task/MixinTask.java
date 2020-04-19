@@ -26,7 +26,7 @@ public abstract class MixinTask<E extends LivingEntity> implements ExtendedTask<
     private Map<MemoryModuleType<?>, MemoryModuleStatus> requiredMemoryState;
 
     @Shadow
-    protected abstract boolean func_212834_g_(ServerWorld worldIn, E entityIn, long gameTimeIn);
+    protected abstract boolean shouldContinueExecuting(ServerWorld worldIn, E entityIn, long gameTimeIn);
 
     private List<Tuple<MemoryModuleType<?>, MemoryModuleStatus>> requiredMemoryStatesFlattened;
 
@@ -58,6 +58,6 @@ public abstract class MixinTask<E extends LivingEntity> implements ExtendedTask<
 
     @Override
     public boolean bridge$shouldContinueExecuting(ServerWorld world, E entity, long time) {
-        return this.func_212834_g_(world, entity, time);
+        return this.shouldContinueExecuting(world, entity, time);
     }
 }

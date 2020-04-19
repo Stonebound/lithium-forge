@@ -3,7 +3,7 @@ package me.jellysquid.mods.lithium.mixin.ai.fast_brain;
 import com.google.common.collect.ImmutableList;
 import com.mojang.datafixers.util.Pair;
 import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.ai.brain.*;
+import net.minecraft.entity.ai.brain.Brain;
 import net.minecraft.entity.ai.brain.memory.MemoryModuleStatus;
 import net.minecraft.entity.ai.brain.memory.MemoryModuleType;
 import net.minecraft.entity.ai.brain.schedule.Activity;
@@ -61,9 +61,9 @@ public abstract class MixinBrain<E extends LivingEntity> {
      * @author JellySquid
      */
     @Overwrite
-    private void func_218229_c(ServerWorld world, E entity) {
+    private void updateSensors(ServerWorld world, E entity) {
         for (Sensor<? super E> sensor : this.sensors.values()) {
-            sensor.func_220973_b(world, entity);
+            sensor.tick(world, entity);
         }
     }
 
@@ -72,7 +72,7 @@ public abstract class MixinBrain<E extends LivingEntity> {
      * @author JellySquid
      */
     @Overwrite
-    private void func_218218_d(ServerWorld world, E entity) {
+    private void startTasks(ServerWorld world, E entity) {
         long time = world.getGameTime();
 
         for (Pair<Activity, List<Task<? super E>>> pair : this.allTasks) {
@@ -82,7 +82,7 @@ public abstract class MixinBrain<E extends LivingEntity> {
 
             for (Task<? super E> task : pair.getSecond()) {
                 if (task.getStatus() == Task.Status.STOPPED) {
-                    task.func_220378_b(world, entity, time);
+                    task.start(world, entity, time);
                 }
             }
         }
@@ -93,13 +93,13 @@ public abstract class MixinBrain<E extends LivingEntity> {
      * @author JellySquid
      */
     @Overwrite
-    private void func_218222_e(ServerWorld world, E entity) {
+    private void tickTasks(ServerWorld world, E entity) {
         long time = world.getGameTime();
 
         for (Pair<Activity, List<Task<? super E>>> pair : this.allTasks) {
             for (Task<? super E> task : pair.getSecond()) {
                 if (task.getStatus() == Task.Status.RUNNING) {
-                    task.func_220377_c(world, entity, time);
+                    task.tick(world, entity, time);
                 }
             }
         }

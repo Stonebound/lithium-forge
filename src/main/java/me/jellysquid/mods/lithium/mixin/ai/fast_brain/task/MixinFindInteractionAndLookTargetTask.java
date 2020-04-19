@@ -43,7 +43,7 @@ public abstract class MixinFindInteractionAndLookTargetTask extends Task<LivingE
      * @author JellySquid
      */
     @Overwrite
-    public boolean func_212832_a_(ServerWorld world, LivingEntity self) {
+    public boolean shouldExecute(ServerWorld world, LivingEntity self) {
         if (!this.field_220536_d.test(self)) {
             return false;
         }
@@ -64,8 +64,8 @@ public abstract class MixinFindInteractionAndLookTargetTask extends Task<LivingE
      * @author JellySquid
      */
     @Overwrite
-    public void func_212831_a_(ServerWorld world, LivingEntity self, long time) {
-        super.func_212831_a_(world, self, time);
+    public void startExecuting(ServerWorld world, LivingEntity self, long time) {
+        super.startExecuting(world, self, time);
 
         Brain<?> brain = self.getBrain();
 
